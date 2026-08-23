@@ -1,6 +1,6 @@
 export function formatNumber(value: number | null | undefined, digits = 2): string {
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
-  return value.toLocaleString(undefined, {
+  return value.toLocaleString("en-US", {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });
@@ -26,4 +26,20 @@ export function formatPct(value: number | null | undefined, digits = 1): string 
 export function formatBbl(value: number | null | undefined, digits = 0): string {
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
   return `${formatNumber(value, digits)} bbl`;
+}
+
+export function barrelsToGallons(barrels: number): number {
+  return barrels * 42;
+}
+
+export function perGallon(totalDollars: number | null | undefined, barrels: number): number | null {
+  if (totalDollars === null || totalDollars === undefined || Number.isNaN(totalDollars) || barrels <= 0) {
+    return null;
+  }
+  return totalDollars / barrelsToGallons(barrels);
+}
+
+export function formatPerGal(value: number | null | undefined, digits = 4): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return "—";
+  return `$${formatNumber(value, digits)}/gal`;
 }

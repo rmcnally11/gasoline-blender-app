@@ -1,11 +1,11 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import type { NaphthaKind, NaphthaSeekResult } from "@/lib/blend";
 import { formatBbl, formatMoney, formatNumber } from "@/lib/blend";
+import { ActionButton } from "./action-button";
 import { NumberField } from "./number-field";
 
 export function NaphthaPanel({
@@ -13,6 +13,7 @@ export function NaphthaPanel({
   heavyPrice,
   lightResult,
   heavyResult,
+  busy = false,
   onPriceChange,
   onSeek,
 }: {
@@ -20,6 +21,7 @@ export function NaphthaPanel({
   heavyPrice: number;
   lightResult: NaphthaSeekResult | null;
   heavyResult: NaphthaSeekResult | null;
+  busy?: boolean;
   onPriceChange: (kind: Exclude<NaphthaKind, null>, price: number) => void;
   onSeek: () => void;
 }) {
@@ -34,7 +36,9 @@ export function NaphthaPanel({
               domestic barrel after sulfur, benzene, distillation, and RVO?
             </CardDescription>
           </div>
-          <Button onClick={onSeek}>Goal-seek values</Button>
+          <ActionButton onClick={onSeek} busy={busy}>
+            {busy ? "Seeking…" : "Goal-seek values"}
+          </ActionButton>
         </div>
       </CardHeader>
       <CardContent className="grid gap-4 md:grid-cols-2">

@@ -10,8 +10,8 @@ import {
   SEASON_OPTIONS,
   SLATE_OPTIONS,
   evaluateSpecs,
-  formatMoney,
   formatNumber,
+  formatPerGal,
   slateNote,
   type PlantSolve,
   type ProductSpecs,
@@ -117,12 +117,17 @@ export function TankCard({
           <Metric label="S ppm" value={formatNumber(tankSolve?.properties?.sulfurPpm, 1)} />
           <Metric label="Benzene" value={formatNumber(tankSolve?.properties?.benzeneVolPct, 2)} />
           <Metric label="DI" value={formatNumber(tankSolve?.properties?.di, 0)} />
-          <Metric label="Blend $" value={formatMoney(tankSolve?.properties?.costPerBbl)} />
+          <Metric
+            label="Blend $/gal"
+            value={formatPerGal(
+              tankSolve?.properties ? tankSolve.properties.costPerBbl / 42 : null,
+            )}
+          />
         </dl>
         <p className="text-[11px] text-muted-foreground">
           Opening {formatNumber(tank.inventoryBbl, 0)} bbl · heel {formatNumber(tank.heelBbl, 0)} · capacity {formatNumber(tank.capacityBbl, 0)} bbl. Demand is the blend volume this cycle.
         </p>
-        <SpecSheet compact checks={checks} specs={tank.specs} onSpecChange={onSpecChange} rvpNote={rvpNote} />
+        <SpecSheet checks={checks} specs={tank.specs} onSpecChange={onSpecChange} rvpNote={rvpNote} />
       </CardContent>
     </Card>
   );

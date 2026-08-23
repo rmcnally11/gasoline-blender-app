@@ -25,6 +25,8 @@ npm run dev
 
 Open [http://127.0.0.1:43180](http://127.0.0.1:43180).
 
+Pages: `/` plant desk, `/p1` `/p2` `/p3` one tank each, `/manual` user manual. Economics are $/gal.
+
 ## How to use it
 
 1. Set P1/P2/P3 demand and slates (CPL regular, Explorer midgrade, CPL premium is the default).

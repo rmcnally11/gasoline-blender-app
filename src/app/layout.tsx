@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { PlantProvider } from "@/components/blender/plant-context";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
@@ -16,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Gasoline blender",
   description:
-    "Minimum-cost gasoline blend header: typical US blendstocks, ASTM-style specs, and a linear program for the cheapest on-spec recipe.",
+    "Three-tank gasoline blend header: plant economics in $/gal, pipeline slates, and naphtha goal-seek.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -26,7 +27,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
-        <TooltipProvider>{children}</TooltipProvider>
+        <TooltipProvider>
+          <PlantProvider>{children}</PlantProvider>
+        </TooltipProvider>
       </body>
     </html>
   );
