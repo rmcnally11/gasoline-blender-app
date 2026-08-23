@@ -2,38 +2,39 @@ export function Assumptions() {
   return (
     <div className="grid gap-4 text-sm leading-6 text-muted-foreground md:grid-cols-2">
       <div>
-        <h3 className="mb-1 font-medium text-foreground">What this first slice is</h3>
+        <h3 className="mb-1 font-medium text-foreground">What this header is</h3>
         <p>
-          A single-grade gasoline blend header: pick a finished spec, price the blendstocks,
-          and solve a linear program for the cheapest recipe that stays on spec. Use it to
-          learn the tradeoffs before adding tanks, multi-grade allocation, or a plant-wide LP.
+          P1, P2, and P3 are finished-product tanks sharing one blendstock pool. The LP
+          allocates barrels, not percentages, so regular and premium compete for alkylate,
+          FCC, ethanol, and naphtha in the same solve.
         </p>
+      </div>
+      <div>
+        <h3 className="mb-1 font-medium text-foreground">Spec slates</h3>
+        <ul className="list-disc space-y-1 pl-4">
+          <li>CPL / Explorer CBOB: Colonial and Explorer receipt, D4814 distillation and DI.</li>
+          <li>Tier 3 / MSAT2 overlay (default on): 10 ppm sulfur and 0.62 vol% benzene on US CBOB.</li>
+          <li>SFPP CARBOB: CaRFG3-style caps — 20 ppm S, 0.80% benzene, T50 220 / T90 330, olefins 10%.</li>
+          <li>Mexico NOM-016: ZMVM 30 ppm / 1.0% benzene / 25% aromatics; resto 2.0% benzene / 32% aromatics. Premium AKI 91 and RON 94.</li>
+        </ul>
       </div>
       <div>
         <h3 className="mb-1 font-medium text-foreground">Blend rules</h3>
         <ul className="list-disc space-y-1 pl-4">
-          <li>Octane, benzene, aromatics, and olefins blend volume-linear on blending numbers.</li>
-          <li>RVP uses the Chevron index BI = RVP<sup>1.25</sup>, which keeps the LP linear.</li>
-          <li>Sulfur and oxygen are mass-weighted with specific gravity.</li>
-          <li>Ethanol RVP of 18 psi is a splash-blend approximation of the E10 vapor-pressure bump.</li>
+          <li>Octane, benzene, aromatics, olefins, T10/T50/T90, E200/E300 blend volume-linear.</li>
+          <li>RVP uses the Chevron index BI = RVP<sup>1.25</sup>.</li>
+          <li>Sulfur and oxygen are mass-weighted.</li>
+          <li>Driveability index = 1.5 T10 + 3 T50 + T90 + 2.4 × ethanol vol%.</li>
         </ul>
       </div>
       <div>
-        <h3 className="mb-1 font-medium text-foreground">Spec simplifications</h3>
+        <h3 className="mb-1 font-medium text-foreground">Naphtha and RVO</h3>
         <p>
-          Regular / midgrade / premium set (R+M)/2. Seasonal RVP classes follow ASTM D4814
-          volatility. Sulfur is Tier 3 at 10 ppm. Benzene uses the 0.62 vol% MSAT2 average,
-          not the 1.3 cap. Aromatics and olefins are internal limits, not federal maxima.
-          The 1-psi waiver adds 1.0 psi to the RVP limit when enabled.
-        </p>
-      </div>
-      <div>
-        <h3 className="mb-1 font-medium text-foreground">Intentionally later</h3>
-        <p>
-          Distillation (T50 / T90 / E200), driveability index, tank heels, component
-          availability in barrels, simultaneous regular/premium, RFG / RBOB vs CBOB,
-          nonlinear octane interaction, and a live price feed. Those are the next model
-          layers once this header is useful.
+          Goal-seek binary-searches the purchase price until the header stops taking that
+          naphtha. Implied value is the most you can pay and still create an on-spec
+          domestic barrel. RVO treats each finished gasoline barrel as obligated and credits
+          D6 RINs only on ethanol. Naphtha adds obligated gallons and no RINs, so sulfur,
+          benzene, octane, DI, and RVO all show up as debits.
         </p>
       </div>
     </div>

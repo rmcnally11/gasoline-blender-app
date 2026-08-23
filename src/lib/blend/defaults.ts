@@ -1,42 +1,19 @@
-import type {
-  BlendCase,
-  Blendstock,
-  EthanolMode,
-  GradeId,
-  ProductSpecs,
-  SeasonId,
-} from "./types";
+import { DEFAULT_RVO } from "./rvo";
+import {
+  buildSpecs,
+  defaultEthanolMode,
+  GRADE_OPTIONS,
+  rackPricePerBbl,
+} from "./specs";
+import type { Blendstock, EthanolMode, Plant, ProductTank, SlateId, TankId } from "./types";
 
-export const GRADE_OPTIONS: { id: GradeId; label: string; akiMin: number; rackPerGal: number }[] = [
-  { id: "regular", label: "Regular 87", akiMin: 87, rackPerGal: 2.48 },
-  { id: "midgrade", label: "Midgrade 89", akiMin: 89, rackPerGal: 2.68 },
-  { id: "premium", label: "Premium 93", akiMin: 93, rackPerGal: 2.92 },
-];
-
-export const SEASON_OPTIONS: { id: SeasonId; label: string; rvpMaxPsi: number }[] = [
-  { id: "summer78", label: "Summer 7.8 psi", rvpMaxPsi: 7.8 },
-  { id: "summer90", label: "Summer 9.0 psi", rvpMaxPsi: 9.0 },
-  { id: "summer115", label: "Summer 11.5 psi", rvpMaxPsi: 11.5 },
-  { id: "winter135", label: "Winter 13.5 psi", rvpMaxPsi: 13.5 },
-  { id: "winter150", label: "Winter 15.0 psi", rvpMaxPsi: 15.0 },
-];
-
-export const ETHANOL_OPTIONS: { id: EthanolMode; label: string }[] = [
-  { id: "e10", label: "E10 splash" },
-  { id: "e0", label: "E0 / no ethanol" },
-  { id: "flex", label: "Flex 0–10%" },
-];
-
-const GALLONS_PER_BBL = 42;
-
-export function rackPricePerBbl(gradeId: GradeId): number {
-  const grade = GRADE_OPTIONS.find((item) => item.id === gradeId) ?? GRADE_OPTIONS[0];
-  return grade.rackPerGal * GALLONS_PER_BBL;
+function stream(partial: Blendstock): Blendstock {
+  return partial;
 }
 
 export function defaultComponents(): Blendstock[] {
   return [
-    {
+    stream({
       id: "nbutane",
       name: "n-Butane",
       shortName: "nC4",
@@ -51,12 +28,21 @@ export function defaultComponents(): Blendstock[] {
       aromaticsVolPct: 0,
       olefinsVolPct: 0,
       oxygenWtPct: 0,
+      t10F: 20,
+      t50F: 31,
+      t90F: 31,
+      e200VolPct: 100,
+      e300VolPct: 100,
       costPerBbl: 46,
+      inventoryBbl: 900,
+      minLiftBbl: 0,
+      maxLiftBbl: 900,
       minVolPct: 0,
       maxVolPct: 8,
       enabled: true,
-    },
-    {
+      naphtha: null,
+    }),
+    stream({
       id: "isomerate",
       name: "Isomerate",
       shortName: "ISO",
@@ -71,32 +57,79 @@ export function defaultComponents(): Blendstock[] {
       aromaticsVolPct: 0.6,
       olefinsVolPct: 0.4,
       oxygenWtPct: 0,
+      t10F: 110,
+      t50F: 140,
+      t90F: 180,
+      e200VolPct: 85,
+      e300VolPct: 100,
       costPerBbl: 88,
+      inventoryBbl: 2200,
+      minLiftBbl: 0,
+      maxLiftBbl: 2200,
       minVolPct: 0,
       maxVolPct: 35,
       enabled: true,
-    },
-    {
+      naphtha: null,
+    }),
+    stream({
       id: "lsr",
-      name: "Light straight-run naphtha",
-      shortName: "LSR",
+      name: "Light naphtha",
+      shortName: "LN",
       family: "Naphtha",
       color: "#94a3b8",
       ron: 70,
       mon: 68,
-      rvp: 11.1,
-      specificGravity: 0.682,
-      sulfurPpm: 18,
-      benzeneVolPct: 0.4,
-      aromaticsVolPct: 4.5,
-      olefinsVolPct: 0.8,
+      rvp: 12.2,
+      specificGravity: 0.68,
+      sulfurPpm: 35,
+      benzeneVolPct: 0.55,
+      aromaticsVolPct: 6,
+      olefinsVolPct: 1,
       oxygenWtPct: 0,
-      costPerBbl: 76,
+      t10F: 125,
+      t50F: 175,
+      t90F: 245,
+      e200VolPct: 58,
+      e300VolPct: 92,
+      costPerBbl: 72,
+      inventoryBbl: 1800,
+      minLiftBbl: 0,
+      maxLiftBbl: 1800,
+      minVolPct: 0,
+      maxVolPct: 30,
+      enabled: true,
+      naphtha: "light",
+    }),
+    stream({
+      id: "heavy-naphtha",
+      name: "Heavy naphtha",
+      shortName: "HN",
+      family: "Naphtha",
+      color: "#78716c",
+      ron: 64,
+      mon: 62,
+      rvp: 4.4,
+      specificGravity: 0.762,
+      sulfurPpm: 85,
+      benzeneVolPct: 1.85,
+      aromaticsVolPct: 15,
+      olefinsVolPct: 2,
+      oxygenWtPct: 0,
+      t10F: 190,
+      t50F: 270,
+      t90F: 348,
+      e200VolPct: 12,
+      e300VolPct: 48,
+      costPerBbl: 68,
+      inventoryBbl: 1500,
+      minLiftBbl: 0,
+      maxLiftBbl: 1500,
       minVolPct: 0,
       maxVolPct: 25,
       enabled: true,
-    },
-    {
+      naphtha: "heavy",
+    }),
+    stream({
       id: "reformate",
       name: "Reformate",
       shortName: "REF",
@@ -111,12 +144,21 @@ export function defaultComponents(): Blendstock[] {
       aromaticsVolPct: 66,
       olefinsVolPct: 0.8,
       oxygenWtPct: 0,
+      t10F: 200,
+      t50F: 260,
+      t90F: 330,
+      e200VolPct: 18,
+      e300VolPct: 55,
       costPerBbl: 104,
+      inventoryBbl: 2800,
+      minLiftBbl: 0,
+      maxLiftBbl: 2800,
       minVolPct: 0,
       maxVolPct: 40,
       enabled: true,
-    },
-    {
+      naphtha: null,
+    }),
+    stream({
       id: "fcc",
       name: "FCC gasoline",
       shortName: "FCC",
@@ -131,12 +173,21 @@ export function defaultComponents(): Blendstock[] {
       aromaticsVolPct: 27,
       olefinsVolPct: 21,
       oxygenWtPct: 0,
+      t10F: 140,
+      t50F: 220,
+      t90F: 340,
+      e200VolPct: 35,
+      e300VolPct: 70,
       costPerBbl: 91,
+      inventoryBbl: 4500,
+      minLiftBbl: 0,
+      maxLiftBbl: 4500,
       minVolPct: 0,
       maxVolPct: 50,
       enabled: true,
-    },
-    {
+      naphtha: null,
+    }),
+    stream({
       id: "alkylate",
       name: "Alkylate",
       shortName: "ALK",
@@ -151,12 +202,21 @@ export function defaultComponents(): Blendstock[] {
       aromaticsVolPct: 0.2,
       olefinsVolPct: 0.4,
       oxygenWtPct: 0,
+      t10F: 170,
+      t50F: 220,
+      t90F: 280,
+      e200VolPct: 30,
+      e300VolPct: 85,
       costPerBbl: 118,
+      inventoryBbl: 2400,
+      minLiftBbl: 0,
+      maxLiftBbl: 2400,
       minVolPct: 0,
-      maxVolPct: 45,
+      maxVolPct: 50,
       enabled: true,
-    },
-    {
+      naphtha: null,
+    }),
+    stream({
       id: "lhc",
       name: "Light hydrocrackate",
       shortName: "LHC",
@@ -171,12 +231,21 @@ export function defaultComponents(): Blendstock[] {
       aromaticsVolPct: 8,
       olefinsVolPct: 0.6,
       oxygenWtPct: 0,
+      t10F: 150,
+      t50F: 200,
+      t90F: 290,
+      e200VolPct: 40,
+      e300VolPct: 80,
       costPerBbl: 84,
+      inventoryBbl: 1600,
+      minLiftBbl: 0,
+      maxLiftBbl: 1600,
       minVolPct: 0,
       maxVolPct: 30,
       enabled: true,
-    },
-    {
+      naphtha: null,
+    }),
+    stream({
       id: "ethanol",
       name: "Ethanol",
       shortName: "EtOH",
@@ -191,12 +260,21 @@ export function defaultComponents(): Blendstock[] {
       aromaticsVolPct: 0,
       olefinsVolPct: 0,
       oxygenWtPct: 34.73,
+      t10F: 173,
+      t50F: 173,
+      t90F: 173,
+      e200VolPct: 100,
+      e300VolPct: 100,
       costPerBbl: 71,
-      minVolPct: 10,
+      inventoryBbl: 1600,
+      minLiftBbl: 0,
+      maxLiftBbl: 1600,
+      minVolPct: 0,
       maxVolPct: 10,
       enabled: true,
-    },
-    {
+      naphtha: null,
+    }),
+    stream({
       id: "natural",
       name: "Natural gasoline",
       shortName: "NG",
@@ -211,12 +289,21 @@ export function defaultComponents(): Blendstock[] {
       aromaticsVolPct: 5,
       olefinsVolPct: 1.5,
       oxygenWtPct: 0,
+      t10F: 100,
+      t50F: 160,
+      t90F: 240,
+      e200VolPct: 65,
+      e300VolPct: 92,
       costPerBbl: 74,
+      inventoryBbl: 900,
+      minLiftBbl: 0,
+      maxLiftBbl: 900,
       minVolPct: 0,
       maxVolPct: 20,
       enabled: true,
-    },
-    {
+      naphtha: null,
+    }),
+    stream({
       id: "raffinate",
       name: "Raffinate",
       shortName: "RAF",
@@ -231,28 +318,21 @@ export function defaultComponents(): Blendstock[] {
       aromaticsVolPct: 5.5,
       olefinsVolPct: 0.8,
       oxygenWtPct: 0,
+      t10F: 180,
+      t50F: 240,
+      t90F: 320,
+      e200VolPct: 22,
+      e300VolPct: 65,
       costPerBbl: 68,
+      inventoryBbl: 700,
+      minLiftBbl: 0,
+      maxLiftBbl: 700,
       minVolPct: 0,
       maxVolPct: 15,
       enabled: true,
-    },
+      naphtha: null,
+    }),
   ];
-}
-
-export function buildSpecs(gradeId: GradeId, seasonId: SeasonId, ethanolMode: EthanolMode): ProductSpecs {
-  const grade = GRADE_OPTIONS.find((item) => item.id === gradeId) ?? GRADE_OPTIONS[0];
-  const season = SEASON_OPTIONS.find((item) => item.id === seasonId) ?? SEASON_OPTIONS[1];
-  return {
-    akiMin: grade.akiMin,
-    ronMin: null,
-    rvpMaxPsi: season.rvpMaxPsi,
-    sulfurMaxPpm: 10,
-    benzeneMaxVolPct: 0.62,
-    aromaticsMaxVolPct: 35,
-    olefinsMaxVolPct: 18,
-    oxygenMinWtPct: ethanolMode === "e10" ? 3.5 : null,
-    oxygenMaxWtPct: 3.9,
-  };
 }
 
 export function applyEthanolMode(components: Blendstock[], mode: EthanolMode): Blendstock[] {
@@ -268,17 +348,58 @@ export function applyEthanolMode(components: Blendstock[], mode: EthanolMode): B
   });
 }
 
-export function createDefaultCase(): BlendCase {
-  const gradeId: GradeId = "regular";
-  const seasonId: SeasonId = "summer90";
-  const ethanolMode: EthanolMode = "e10";
+function makeTank(
+  id: TankId,
+  name: string,
+  gradeId: ProductTank["gradeId"],
+  slateId: SlateId,
+  demandBbl: number,
+  inventoryBbl: number,
+  complianceOverlay: boolean,
+): ProductTank {
+  const seasonId = "summer90";
+  const ethanolMode = defaultEthanolMode(slateId);
   return {
+    id,
+    name,
+    enabled: true,
     gradeId,
+    slateId,
     seasonId,
     ethanolMode,
-    rvpWaiver: true,
-    rackPricePerBbl: rackPricePerBbl(gradeId),
-    specs: buildSpecs(gradeId, seasonId, ethanolMode),
-    components: applyEthanolMode(defaultComponents(), ethanolMode),
+    rvpWaiver: slateId === "cpl-cbob" || slateId === "explorer-cbob",
+    specs: buildSpecs(slateId, gradeId, seasonId, ethanolMode, complianceOverlay),
+    inventoryBbl,
+    capacityBbl: id === "P2" ? 12000 : 28000,
+    heelBbl: 400,
+    demandBbl,
+    rackPricePerBbl: rackPricePerBbl(gradeId, slateId),
   };
+}
+
+export function createDefaultPlant(): Plant {
+  const complianceOverlay = true;
+  return {
+    complianceOverlay,
+    rvo: { ...DEFAULT_RVO },
+    components: applyEthanolMode(defaultComponents(), "e10"),
+    tanks: [
+      makeTank("P1", "P1 Regular", "regular", "cpl-cbob", 8000, 2200, complianceOverlay),
+      makeTank("P2", "P2 Midgrade", "midgrade", "explorer-cbob", 1500, 800, complianceOverlay),
+      makeTank("P3", "P3 Premium", "premium", "cpl-cbob", 2500, 1100, complianceOverlay),
+    ],
+  };
+}
+
+export function refreshTankSpecs(tank: ProductTank, complianceOverlay: boolean): ProductTank {
+  return {
+    ...tank,
+    specs: buildSpecs(tank.slateId, tank.gradeId, tank.seasonId, tank.ethanolMode, complianceOverlay),
+    rackPricePerBbl: rackPricePerBbl(tank.gradeId, tank.slateId),
+    rvpWaiver: tank.slateId === "cpl-cbob" || tank.slateId === "explorer-cbob" ? tank.rvpWaiver : false,
+  };
+}
+
+export function gradeLabel(gradeId: ProductTank["gradeId"]): string {
+  return GRADE_OPTIONS.find((item) => item.id === gradeId)?.label ?? gradeId;
 }

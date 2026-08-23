@@ -22,3 +22,8 @@ export function formatPct(value: number | null | undefined, digits = 1): string 
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
   return `${formatNumber(value, digits)}%`;
 }
+
+export function formatBbl(value: number | null | undefined, digits = 0): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return "—";
+  return `${formatNumber(value, digits)} bbl`;
+}

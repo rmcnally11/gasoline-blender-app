@@ -1,333 +1,275 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
-  ETHANOL_OPTIONS,
-  GRADE_OPTIONS,
-  SEASON_OPTIONS,
-  applyEthanolMode,
-  buildSpecs,
-  createDefaultCase,
-  evaluateSpecs,
+  createDefaultPlant,
   formatMoney,
-  formatNumber,
-  formatPct,
-  gallonsPerBarrel,
-  optimizeBlend,
-  predictProperties,
-  rackPricePerBbl,
+  optimizePlant,
+  refreshTankSpecs,
+  seekNaphtha,
   type Blendstock,
-  type BlendCase,
-  type EthanolMode,
-  type GradeId,
+  type NaphthaSeekResult,
+  type Plant,
+  type PlantSolve,
   type ProductSpecs,
-  type Recipe,
-  type SeasonId,
+  type ProductTank,
   type SolverStatus,
+  type TankId,
 } from "@/lib/blend";
 import { AlertTriangle, RotateCcw, Sparkles } from "lucide-react";
 import { AssayDialog } from "./assay-dialog";
 import { Assumptions } from "./assumptions";
 import { BlendstockTable } from "./blendstock-table";
-import { RecipeBar } from "./recipe-bar";
-import { SpecSheet } from "./spec-sheet";
+import { NaphthaPanel } from "./naphtha-panel";
+import { NumberField } from "./number-field";
+import { TankCard } from "./tank-card";
 
-const initialCase = createDefaultCase();
-const initialSolve = optimizeBlend(initialCase);
+const initialPlant = createDefaultPlant();
+const initialSolve = optimizePlant(initialPlant);
+const initialLight = seekNaphtha(initialPlant, "light", 72);
+const initialHeavy = seekNaphtha(initialPlant, "heavy", 68);
 
 export function BlenderApp() {
-  const [blendCase, setBlendCase] = useState<BlendCase>(initialCase);
-  const [recipe, setRecipe] = useState<Recipe>(initialSolve.recipe);
+  const [plant, setPlant] = useState<Plant>(initialPlant);
+  const [solve, setSolve] = useState<PlantSolve>(initialSolve);
   const [solverStatus, setSolverStatus] = useState<SolverStatus>(initialSolve.status);
-  const [solverMessage, setSolverMessage] = useState(initialSolve.message);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [lightPrice, setLightPrice] = useState(72);
+  const [heavyPrice, setHeavyPrice] = useState(68);
+  const [lightResult, setLightResult] = useState<NaphthaSeekResult | null>(initialLight);
+  const [heavyResult, setHeavyResult] = useState<NaphthaSeekResult | null>(initialHeavy);
 
-  const properties = useMemo(
-    () => predictProperties(blendCase.components, recipe),
-    [blendCase.components, recipe],
-  );
-  const checks = useMemo(() => evaluateSpecs(blendCase, properties), [blendCase, properties]);
-  const failed = checks.filter((check) => check.status === "fail");
-  const binding = checks.filter((check) => check.binding);
-  const volumePct = blendCase.components.reduce(
-    (acc, component) => acc + (recipe.volumes[component.id] ?? 0) * 100,
-    0,
-  );
-  const margin = properties ? blendCase.rackPricePerBbl - properties.costPerBbl : null;
-  const editing = blendCase.components.find((component) => component.id === editingId) ?? null;
+  const editing = plant.components.find((component) => component.id === editingId) ?? null;
 
-  function applySolve(nextCase: BlendCase) {
-    const result = optimizeBlend(nextCase);
-    setBlendCase(nextCase);
-    setRecipe(result.recipe);
+  function applySolve(next: Plant) {
+    const result = optimizePlant(next);
+    setPlant(next);
+    setSolve(result);
     setSolverStatus(result.status);
-    setSolverMessage(result.message);
+    return result;
   }
 
   function solveCurrent() {
-    applySolve(blendCase);
+    applySolve(plant);
+    setLightResult(seekNaphtha(plant, "light", lightPrice));
+    setHeavyResult(seekNaphtha(plant, "heavy", heavyPrice));
   }
 
-  function resetCase() {
-    const next = createDefaultCase();
+  function resetPlant() {
+    const next = createDefaultPlant();
+    applySolve(next);
+    setLightPrice(72);
+    setHeavyPrice(68);
+    setLightResult(null);
+    setHeavyResult(null);
+  }
+
+  function updateTank(id: TankId, patch: Partial<ProductTank>) {
+    const next: Plant = {
+      ...plant,
+      tanks: plant.tanks.map((tank) => {
+        if (tank.id !== id) return tank;
+        const merged = { ...tank, ...patch };
+        return refreshTankSpecs(merged, plant.complianceOverlay);
+      }),
+    };
     applySolve(next);
   }
 
-  function setGrade(gradeId: GradeId) {
-    const specs = {
-      ...buildSpecs(gradeId, blendCase.seasonId, blendCase.ethanolMode),
-      sulfurMaxPpm: blendCase.specs.sulfurMaxPpm,
-      benzeneMaxVolPct: blendCase.specs.benzeneMaxVolPct,
-      aromaticsMaxVolPct: blendCase.specs.aromaticsMaxVolPct,
-      olefinsMaxVolPct: blendCase.specs.olefinsMaxVolPct,
-    };
-    applySolve({
-      ...blendCase,
-      gradeId,
-      specs,
-      rackPricePerBbl: rackPricePerBbl(gradeId),
-    });
-  }
-
-  function setSeason(seasonId: SeasonId) {
-    applySolve({
-      ...blendCase,
-      seasonId,
-      specs: {
-        ...blendCase.specs,
-        rvpMaxPsi: buildSpecs(blendCase.gradeId, seasonId, blendCase.ethanolMode).rvpMaxPsi,
-      },
-    });
-  }
-
-  function setEthanolMode(ethanolMode: EthanolMode) {
-    const components = applyEthanolMode(blendCase.components, ethanolMode);
-    applySolve({
-      ...blendCase,
-      ethanolMode,
-      components,
-      specs: {
-        ...blendCase.specs,
-        oxygenMinWtPct: buildSpecs(blendCase.gradeId, blendCase.seasonId, ethanolMode).oxygenMinWtPct,
-      },
-    });
-  }
-
-  function setWaiver(rvpWaiver: boolean) {
-    applySolve({ ...blendCase, rvpWaiver });
-  }
-
-  function updateSpecs(patch: Partial<ProductSpecs>) {
-    setBlendCase((current) => ({ ...current, specs: { ...current.specs, ...patch } }));
+  function updateTankSpecs(id: TankId, patch: Partial<ProductSpecs>) {
+    setPlant((current) => ({
+      ...current,
+      tanks: current.tanks.map((tank) =>
+        tank.id === id ? { ...tank, specs: { ...tank.specs, ...patch } } : tank,
+      ),
+    }));
     setSolverStatus("idle");
   }
 
   function updateComponent(id: string, patch: Partial<Blendstock>) {
-    setBlendCase((current) => ({
+    setPlant((current) => ({
       ...current,
       components: current.components.map((component) =>
         component.id === id ? { ...component, ...patch } : component,
       ),
     }));
-    if (patch.enabled === false) {
-      setRecipe((current) => ({
-        volumes: { ...current.volumes, [id]: 0 },
-      }));
-    }
     setSolverStatus("idle");
   }
 
-  function updateVolume(id: string, volPct: number) {
-    setRecipe((current) => ({
-      volumes: { ...current.volumes, [id]: volPct / 100 },
-    }));
-    setSolverStatus("idle");
+  function updateRvo<K extends keyof Plant["rvo"]>(key: K, value: Plant["rvo"][K]) {
+    applySolve({ ...plant, rvo: { ...plant.rvo, [key]: value } });
   }
 
-  const rvpNote = blendCase.rvpWaiver
-    ? `Chevron index · ${blendCase.specs.rvpMaxPsi.toFixed(1)} psi class + 1.0 waiver`
-    : `Chevron index · ${blendCase.specs.rvpMaxPsi.toFixed(1)} psi class`;
+  function setOverlay(complianceOverlay: boolean) {
+    const next: Plant = {
+      ...plant,
+      complianceOverlay,
+      tanks: plant.tanks.map((tank) => refreshTankSpecs(tank, complianceOverlay)),
+    };
+    applySolve(next);
+  }
+
+  function runSeek() {
+    setLightResult(seekNaphtha(plant, "light", lightPrice));
+    setHeavyResult(seekNaphtha(plant, "heavy", heavyPrice));
+  }
 
   return (
     <div className="min-h-full bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.08),_transparent_42%)]">
       <header className="border-b border-border/80 bg-background/85 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-[88rem] flex-col gap-4 px-4 py-4 md:px-6">
+        <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-4 px-4 py-4 md:px-6">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <p className="text-[11px] font-medium tracking-[0.18em] text-amber-400 uppercase">
                   Blend header
                 </p>
-                <Badge variant="outline">Single-grade LP</Badge>
+                <Badge variant="outline">P1 · P2 · P3</Badge>
+                <Badge variant="outline">CPL / Explorer / SFPP / Mexico</Badge>
               </div>
-              <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+              <h1 className="mt-1 text-2xl font-semibold tracking-tight md:text-3xl">
                 Gasoline blender
               </h1>
-              <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                Minimum-cost recipe for a finished gasoline spec. Start here: one product,
-                typical US blendstocks, and the constraints that actually bind.
+              <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+                One pool, three product tanks. Allocate barrels to Regular, Midgrade, and
+                Premium against pipeline slates, then goal-seek light and heavy naphtha into
+                a domestic barrel.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={resetCase}>
+              <Button variant="outline" onClick={resetPlant}>
                 <RotateCcw data-icon="inline-start" />
-                Reset pool
+                Reset plant
               </Button>
               <Button onClick={solveCurrent}>
                 <Sparkles data-icon="inline-start" />
-                Solve min-cost
+                Solve plant
               </Button>
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <FieldSelect
-              label="Finished grade"
-              value={blendCase.gradeId}
-              onChange={(value) => setGrade(value as GradeId)}
-              options={GRADE_OPTIONS.map((option) => ({ id: option.id, label: option.label }))}
-            />
-            <FieldSelect
-              label="RVP class"
-              value={blendCase.seasonId}
-              onChange={(value) => setSeason(value as SeasonId)}
-              options={SEASON_OPTIONS.map((option) => ({ id: option.id, label: option.label }))}
-            />
-            <FieldSelect
-              label="Ethanol"
-              value={blendCase.ethanolMode}
-              onChange={(value) => setEthanolMode(value as EthanolMode)}
-              options={ETHANOL_OPTIONS}
-            />
+          <div className="grid gap-3 lg:grid-cols-4">
             <div className="flex items-end justify-between rounded-xl border border-border bg-card/60 px-3 py-2">
               <div>
-                <Label className="text-xs text-muted-foreground">1-psi RVP waiver</Label>
-                <p className="text-xs text-muted-foreground">Adds 1.0 psi for 9–10% ethanol</p>
+                <Label className="text-xs text-muted-foreground">Tier 3 / MSAT2 overlay</Label>
+                <p className="text-xs text-muted-foreground">10 ppm S and 0.62% benzene on US CBOB</p>
               </div>
               <Switch
-                checked={blendCase.rvpWaiver}
-                onCheckedChange={setWaiver}
-                aria-label="Enable 1 psi RVP waiver"
+                checked={plant.complianceOverlay}
+                onCheckedChange={setOverlay}
+                aria-label="Tier 3 and MSAT2 overlay"
               />
             </div>
+            <div className="flex items-end justify-between rounded-xl border border-border bg-card/60 px-3 py-2">
+              <div>
+                <Label className="text-xs text-muted-foreground">RVO</Label>
+                <p className="text-xs text-muted-foreground">Obligation on finished gasoline, RINs on ethanol</p>
+              </div>
+              <Switch
+                checked={plant.rvo.enabled}
+                onCheckedChange={(checked) => updateRvo("enabled", checked)}
+                aria-label="Enable RVO"
+              />
+            </div>
+            <label className="space-y-1">
+              <Label className="text-xs text-muted-foreground">RVO rate, %</Label>
+              <NumberField
+                value={plant.rvo.obligationRate * 100}
+                digits={1}
+                step={0.5}
+                onChange={(value) => updateRvo("obligationRate", value / 100)}
+              />
+            </label>
+            <label className="space-y-1">
+              <Label className="text-xs text-muted-foreground">D6 RIN, $/RIN</Label>
+              <NumberField
+                value={plant.rvo.d6RinPrice}
+                digits={2}
+                step={0.05}
+                onChange={(value) => updateRvo("d6RinPrice", value)}
+              />
+            </label>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-[88rem] flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
+      <main className="mx-auto flex w-full max-w-[96rem] flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
         {solverStatus === "infeasible" ? (
           <Alert variant="destructive">
             <AlertTriangle />
-            <AlertTitle>No feasible recipe</AlertTitle>
-            <AlertDescription>{solverMessage}</AlertDescription>
+            <AlertTitle>No feasible plant allocation</AlertTitle>
+            <AlertDescription>{solve.message}</AlertDescription>
           </Alert>
         ) : null}
-
-        {solverStatus === "idle" && failed.length > 0 ? (
-          <Alert variant="destructive">
-            <AlertTriangle />
-            <AlertTitle>Recipe is off spec</AlertTitle>
-            <AlertDescription>
-              {failed.map((check) => check.label).join(", ")} failed. Edit the pool or solve
-              again.
-            </AlertDescription>
-          </Alert>
-        ) : null}
-
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)]">
-          <Card size="sm">
-            <CardHeader className="border-b">
-              <CardTitle>Recipe</CardTitle>
-              <CardDescription>
-                {solverStatus === "optimal"
-                  ? solverMessage
-                  : "Volumes are live. Properties use the recipe renormalized to 100% if the sum is not exact."}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <RecipeBar components={blendCase.components} recipe={recipe} />
-              <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <Metric
-                  label="Blend cost"
-                  value={formatMoney(properties?.costPerBbl)}
-                  hint={
-                    properties
-                      ? `${formatNumber((properties.costPerBbl / gallonsPerBarrel()) * 100, 1)} ¢/gal`
-                      : "—"
-                  }
-                />
-                <Metric
-                  label="Rack"
-                  value={formatMoney(blendCase.rackPricePerBbl)}
-                  hint={`${formatNumber(blendCase.rackPricePerBbl / gallonsPerBarrel(), 2)} $/gal`}
-                />
-                <Metric
-                  label="Margin"
-                  value={formatMoney(margin)}
-                  hint={margin === null ? "—" : margin >= 0 ? "Over rack" : "Under rack"}
-                  tone={margin === null ? "muted" : margin >= 0 ? "good" : "bad"}
-                />
-                <Metric
-                  label="Volume sum"
-                  value={formatPct(volumePct)}
-                  hint={Math.abs(volumePct - 100) < 0.15 ? "Normalized" : "Unnormalized"}
-                  tone={Math.abs(volumePct - 100) < 0.15 ? "good" : "warn"}
-                />
-              </dl>
-            </CardContent>
-          </Card>
-
-          <Card size="sm">
-            <CardHeader className="border-b">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <CardTitle>Finished spec</CardTitle>
-                  <CardDescription>
-                    {binding.length > 0
-                      ? `Binding now: ${binding.map((check) => check.label).join(", ")}`
-                      : "Limits are editable. Slack is giveaway versus the spec."}
-                  </CardDescription>
-                </div>
-                <StatusPill status={solverStatus} failed={failed.length} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <SpecSheet
-                checks={checks}
-                specs={blendCase.specs}
-                onSpecChange={updateSpecs}
-                rvpNote={rvpNote}
-              />
-            </CardContent>
-          </Card>
-        </div>
 
         <Card size="sm">
           <CardHeader className="border-b">
-            <CardTitle>Blendstock pool</CardTitle>
+            <CardTitle>Plant economics</CardTitle>
             <CardDescription>
-              Typical US streams with blending assays, not tank samples. Toggle a stream
-              off, cap availability, or open the assay to change octane, RVP, sulfur, or cost.
+              {solverStatus === "optimal"
+                ? solve.message
+                : "Numbers update when you solve. Manual assay edits wait for the next solve."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <Metric label="Revenue" value={formatMoney(solve.revenue, 0)} hint="Rack × tank demand" />
+              <Metric label="Blend cost" value={formatMoney(solve.blendCost, 0)} hint="Component barrels" />
+              <Metric label="RVO net" value={formatMoney(solve.rvoCost, 0)} hint="Obligation − ethanol RINs" />
+              <Metric
+                label="Margin"
+                value={formatMoney(solve.margin, 0)}
+                hint={solve.margin !== null && solve.margin >= 0 ? "Over rack after RVO" : "Under rack"}
+                tone={solve.margin === null ? "muted" : solve.margin >= 0 ? "good" : "bad"}
+              />
+            </dl>
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-4 xl:grid-cols-3">
+          {plant.tanks.map((tank) => (
+            <TankCard
+              key={tank.id}
+              tank={tank}
+              components={plant.components}
+              solve={solve}
+              complianceOverlay={plant.complianceOverlay}
+              onChange={(patch) => updateTank(tank.id, patch)}
+              onSpecChange={(patch) => updateTankSpecs(tank.id, patch)}
+            />
+          ))}
+        </div>
+
+        <NaphthaPanel
+          lightPrice={lightPrice}
+          heavyPrice={heavyPrice}
+          lightResult={lightResult}
+          heavyResult={heavyResult}
+          onPriceChange={(kind, price) => {
+            if (kind === "light") setLightPrice(price);
+            else setHeavyPrice(price);
+          }}
+          onSeek={runSeek}
+        />
+
+        <Card size="sm">
+          <CardHeader className="border-b">
+            <CardTitle>Shared blendstock pool</CardTitle>
+            <CardDescription>
+              Inventories are barrels available this cycle. Used is the sum across P1, P2, and P3.
+              Light and heavy naphtha are the goal-seek streams.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <BlendstockTable
-              components={blendCase.components}
-              recipe={recipe}
-              onVolumeChange={updateVolume}
+              components={plant.components}
+              usedBbl={solve.componentUsedBbl}
               onComponentChange={updateComponent}
               onEdit={setEditingId}
             />
@@ -336,10 +278,8 @@ export function BlenderApp() {
 
         <Card size="sm">
           <CardHeader className="border-b">
-            <CardTitle>How this model starts</CardTitle>
-            <CardDescription>
-              The right first step is a transparent header, not a 400-row refinery LP.
-            </CardDescription>
+            <CardTitle>Model notes</CardTitle>
+            <CardDescription>Pipeline slates, overlay, and what “creates a domestic barrel” means.</CardDescription>
           </CardHeader>
           <CardContent>
             <Assumptions />
@@ -357,36 +297,6 @@ export function BlenderApp() {
           if (editingId) updateComponent(editingId, patch);
         }}
       />
-    </div>
-  );
-}
-
-function FieldSelect({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: { id: string; label: string }[];
-}) {
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      <Select value={value} onValueChange={(next) => next && onChange(String(next))}>
-        <SelectTrigger className="w-full">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((option) => (
-            <SelectItem key={option.id} value={option.id}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
     </div>
   );
 }
@@ -415,17 +325,4 @@ function Metric({
       <p className={`text-[11px] ${hintClass}`}>{hint}</p>
     </div>
   );
-}
-
-function StatusPill({ status, failed }: { status: SolverStatus; failed: number }) {
-  if (status === "optimal" && failed === 0) {
-    return <Badge className="bg-emerald-500/15 text-emerald-300">Optimal</Badge>;
-  }
-  if (status === "infeasible") {
-    return <Badge variant="destructive">Infeasible</Badge>;
-  }
-  if (failed > 0) {
-    return <Badge variant="destructive">Off spec</Badge>;
-  }
-  return <Badge variant="outline">Manual</Badge>;
 }

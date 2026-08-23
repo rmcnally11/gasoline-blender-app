@@ -1,4 +1,10 @@
 export type BlendstockId = string;
+export type TankId = "P1" | "P2" | "P3";
+export type GradeId = "regular" | "midgrade" | "premium";
+export type SeasonId = "summer78" | "summer90" | "summer115" | "winter135" | "winter150";
+export type EthanolMode = "e0" | "e10" | "flex";
+export type SlateId = "cpl-cbob" | "explorer-cbob" | "sfpp-carbob" | "mexico-zmvm" | "mexico-resto";
+export type NaphthaKind = "light" | "heavy" | null;
 
 export interface Blendstock {
   id: BlendstockId;
@@ -6,32 +12,34 @@ export interface Blendstock {
   shortName: string;
   family: string;
   color: string;
-  /** Blending research octane number */
   ron: number;
-  /** Blending motor octane number */
   mon: number;
-  /** Reid vapor pressure, psi */
   rvp: number;
   specificGravity: number;
   sulfurPpm: number;
   benzeneVolPct: number;
   aromaticsVolPct: number;
   olefinsVolPct: number;
-  /** Oxygen, wt% on the neat stream (ethanol ~34.7) */
   oxygenWtPct: number;
+  t10F: number;
+  t50F: number;
+  t90F: number;
+  e200VolPct: number;
+  e300VolPct: number;
   costPerBbl: number;
+  inventoryBbl: number;
+  minLiftBbl: number;
+  maxLiftBbl: number;
   minVolPct: number;
   maxVolPct: number;
   enabled: boolean;
+  naphtha: NaphthaKind;
 }
-
-export type GradeId = "regular" | "midgrade" | "premium";
-export type SeasonId = "summer78" | "summer90" | "summer115" | "winter135" | "winter150";
-export type EthanolMode = "e0" | "e10" | "flex";
 
 export interface ProductSpecs {
   akiMin: number;
   ronMin: number | null;
+  monMin: number | null;
   rvpMaxPsi: number;
   sulfurMaxPpm: number;
   benzeneMaxVolPct: number;
@@ -39,17 +47,48 @@ export interface ProductSpecs {
   olefinsMaxVolPct: number;
   oxygenMinWtPct: number | null;
   oxygenMaxWtPct: number;
+  t10MaxF: number | null;
+  t50MinF: number | null;
+  t50MaxF: number | null;
+  t90MaxF: number | null;
+  e200MinVolPct: number | null;
+  e300MinVolPct: number | null;
+  diMax: number | null;
 }
 
-export interface BlendCase {
+export interface ProductTank {
+  id: TankId;
+  name: string;
+  enabled: boolean;
   gradeId: GradeId;
+  slateId: SlateId;
   seasonId: SeasonId;
   ethanolMode: EthanolMode;
-  /** Federal 1-psi RVP waiver for 9–10 vol% ethanol conventional gasoline */
   rvpWaiver: boolean;
-  rackPricePerBbl: number;
   specs: ProductSpecs;
+  inventoryBbl: number;
+  capacityBbl: number;
+  heelBbl: number;
+  demandBbl: number;
+  rackPricePerBbl: number;
+}
+
+export interface RvoSettings {
+  enabled: boolean;
+  /** Fraction of finished gasoline gallons that must be covered by RINs */
+  obligationRate: number;
+  /** D6 RIN price, $ per RIN */
+  d6RinPrice: number;
+  /** RINs generated per ethanol gallon */
+  ethanolRinsPerGal: number;
+}
+
+export interface Plant {
+  tanks: ProductTank[];
   components: Blendstock[];
+  rvo: RvoSettings;
+  /** Apply Tier 3 sulfur / MSAT2 benzene on top of pipeline receipt specs */
+  complianceOverlay: boolean;
 }
 
 export interface BlendProperties {
@@ -64,6 +103,12 @@ export interface BlendProperties {
   aromaticsVolPct: number;
   olefinsVolPct: number;
   oxygenWtPct: number;
+  t10F: number;
+  t50F: number;
+  t90F: number;
+  e200VolPct: number;
+  e300VolPct: number;
+  di: number;
   costPerBbl: number;
 }
 
@@ -84,15 +129,56 @@ export interface SpecCheck {
 }
 
 export interface Recipe {
-  /** Volume fractions, keys are blendstock ids. Need not sum to 1 until normalized. */
   volumes: Record<BlendstockId, number>;
 }
 
+export interface MultiRecipe {
+  /** barrels[tankId][componentId] */
+  barrels: Record<TankId, Record<BlendstockId, number>>;
+}
+
 export type SolverStatus = "optimal" | "infeasible" | "unbounded" | "idle";
+
+export interface TankSolve {
+  tankId: TankId;
+  recipe: Recipe;
+  barrels: Record<BlendstockId, number>;
+  properties: BlendProperties | null;
+}
 
 export interface OptimizeResult {
   status: SolverStatus;
   recipe: Recipe;
   objective: number | null;
+  message: string;
+}
+
+export interface PlantSolve {
+  status: SolverStatus;
+  message: string;
+  recipe: MultiRecipe;
+  tanks: TankSolve[];
+  componentUsedBbl: Record<BlendstockId, number>;
+  blendCost: number | null;
+  revenue: number | null;
+  rvoCost: number | null;
+  margin: number | null;
+}
+
+export interface QualityDebit {
+  id: string;
+  label: string;
+  amount: number;
+  note: string;
+}
+
+export interface NaphthaSeekResult {
+  kind: Exclude<NaphthaKind, null>;
+  offerPrice: number;
+  impliedValue: number | null;
+  clears: boolean;
+  usedBbl: number;
+  destination: Partial<Record<TankId, number>>;
+  debits: QualityDebit[];
   message: string;
 }
