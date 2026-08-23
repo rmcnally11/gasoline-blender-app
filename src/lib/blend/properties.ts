@@ -1,5 +1,6 @@
 import { driveabilityIndex } from "./distillation";
 import { aki, rvpBlendingIndex, rvpFromBlendingIndex } from "./math";
+import { isEthanol } from "./rvo";
 import type {
   BlendProperties,
   Blendstock,
@@ -78,7 +79,7 @@ export function predictProperties(
     e200 += x * component.e200VolPct;
     e300 += x * component.e300VolPct;
     cost += x * component.costPerBbl;
-    if (component.id === "ethanol") ethanolVolPct = x * 100;
+    if (isEthanol(component)) ethanolVolPct = x * 100;
   }
 
   return {

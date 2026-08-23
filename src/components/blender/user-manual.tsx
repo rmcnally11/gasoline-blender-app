@@ -4,14 +4,16 @@ export function UserManual() {
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">What this tool is</h2>
         <p className="text-muted-foreground">
-          A three-tank gasoline blend header. P1, P2, and P3 share one blendstock pool.
-          The solver allocates barrels — not just volume percents — so P1, P2, and P3
-          compete for alkylate, FCC, ethanol, and naphtha in the same run. Grade is a
-          setting on each tank, not the tank’s name.
+          A three-tank gasoline blend header. P1, P2, and P3 each have a grade and a spec
+          slate. The slate also picks the <strong className="text-foreground">region</strong> —
+          Colonial, Explorer, West Coast, or Mexico — and each region has its own blendstock
+          pool. Tanks on the same region compete for those barrels. Tanks on different
+          regions do not.
         </p>
         <p className="text-muted-foreground">
-          Use it to price a domestic barrel, see which spec is binding, and decide whether
-          a light or heavy naphtha cargo clears after sulfur, benzene, distillation, and RVO.
+          Use it to price a domestic barrel in a given region, see which spec is binding, and
+          decide whether a light or heavy naphtha cargo clears after sulfur, benzene,
+          distillation, and RVO.
         </p>
       </section>
 
@@ -19,40 +21,57 @@ export function UserManual() {
         <h2 className="text-lg font-semibold">A normal session</h2>
         <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
           <li>Start on <strong className="text-foreground">Plant</strong>. Confirm overlay, RVO rate, and D6 RIN.</li>
-          <li>Open the pool table. Put in your inventories and $/bbl. Click the pencil for a full assay.</li>
+          <li>Pick a region tab. Put in that region’s inventories and $/bbl. Click the pencil for a full assay.</li>
           <li>Open <strong className="text-foreground">P1</strong>, then P2, then P3. Set grade, slate, season, ethanol lock, and demand.</li>
           <li>Press <strong className="text-foreground">Solve plant</strong>. The header should say “Plant solved.”</li>
           <li>Economics at the top are <strong className="text-foreground">$/gal</strong> on finished gallons, not a notional header.</li>
-          <li>On Plant, type a naphtha offer and press <strong className="text-foreground">Goal-seek values</strong>.</li>
+          <li>On Plant, stay on a region, type a naphtha offer, and press <strong className="text-foreground">Goal-seek values</strong>.</li>
         </ol>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-lg font-semibold">Regional pools</h2>
+        <p className="text-muted-foreground">
+          Defaults are not one copied Gulf-Coast list. Colonial is a Gulf / East Coast CBOB
+          pool. Explorer is a smaller Midwest pool with more natural gasoline. West Coast is
+          treated CARB-style streams and more alkylate. Mexico is a NOM-016 pool that both
+          ZMVM and resto draw from — specs differ, inventory does not.
+        </p>
+        <p className="text-muted-foreground">
+          Changing a tank’s spec slate moves that tank onto the matching pool. P1 and P3 start
+          on Colonial and therefore share Colonial alkylate, FCC, and ethanol. P2 starts on
+          Explorer and cannot lift Colonial barrels.
+        </p>
       </section>
 
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">Solve plant</h2>
         <p className="text-muted-foreground">
-          Solve allocates the shared pool into every enabled tank at once. Tank grade, slate,
-          season, ethanol, demand, overlay, and RVO re-solve immediately. Assay and spec-limit
-          edits wait — the yellow note says so — until you press Solve plant.
+          Solve allocates every enabled tank at once, but inventory constraints are per
+          region. Tank grade, slate, season, ethanol, demand, overlay, and RVO re-solve
+          immediately. Assay and spec-limit edits wait — the yellow note says so — until you
+          press Solve plant.
         </p>
         <p className="text-muted-foreground">
           If nothing seems to happen, look at the line under the title. It should change to
           “Plant solved” or “edits waiting.” The button itself switches to “Solving…” while
           the LP runs. If a case is impossible, a red banner explains that no allocation fits
-          the inventories and slates.
+          that region’s inventories and slates.
         </p>
       </section>
 
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">Naphtha goal-seek</h2>
         <p className="text-muted-foreground">
-          Type the cargo or tank offer in $/bbl. Goal-seek finds the highest price at which
-          the header still takes that naphtha into an on-spec domestic barrel. That price is
-          implied blend value.
+          Goal-seek is per region. Type the cargo or tank offer in $/bbl on the region you
+          care about. The search finds the highest price at which that region’s tanks still
+          take that naphtha into an on-spec domestic barrel. That price is implied blend value.
         </p>
         <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
           <li>If offer ≤ implied value and barrels are taken, it <strong className="text-foreground">creates a domestic barrel</strong>.</li>
           <li>If not, the debit table shows octane, sulfur, benzene, distillation/DI, and RVO.</li>
           <li>Naphtha adds obligated gasoline gallons and no D6 RINs. That is why RVO is a debit.</li>
+          <li>A region with no tank on it will not seek — switch a tank slate first.</li>
         </ul>
       </section>
 
@@ -71,7 +90,7 @@ export function UserManual() {
           <li><strong className="text-foreground">CPL / Explorer CBOB</strong> — pipeline receipt plus D4814 distillation and DI. Overlay (default on) tightens sulfur to 10 ppm and benzene to 0.62 vol%.</li>
           <li><strong className="text-foreground">SFPP CARBOB</strong> — CaRFG3-style caps: 20 ppm S, 0.80% benzene, T50 220 / T90 330, olefins 10%.</li>
           <li><strong className="text-foreground">Mexico ZMVM</strong> — NOM-016 CDMX: 30 ppm S, 1.0% benzene, 25% aromatics. Premium RON 94 / AKI 91. E0 default.</li>
-          <li><strong className="text-foreground">Mexico resto</strong> — 2.0% benzene, 32% aromatics.</li>
+          <li><strong className="text-foreground">Mexico resto</strong> — 2.0% benzene, 32% aromatics. Same Mexico pool as ZMVM.</li>
         </ul>
       </section>
 
@@ -90,7 +109,7 @@ export function UserManual() {
         <h2 className="text-lg font-semibold">What it will not do</h2>
         <p className="text-muted-foreground">
           It will not replace a certified cert, a pipeline ticket, or your linear-program
-          blending system. Defaults are Gulf-Coast-style demo assays. Put your real streams
+          blending system. Defaults are demo assays for each region. Put your real streams
           and prices in before you trust a naphtha bid. RVO here is a single D6 obligation,
           not the full nested RFS.
         </p>

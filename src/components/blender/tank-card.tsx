@@ -71,10 +71,13 @@ export function TankCard({
             options={GRADE_OPTIONS.map((option) => ({ id: option.id, label: option.label }))}
           />
           <FieldSelect
-            label="Spec slate"
+            label="Spec slate / region"
             value={tank.slateId}
             onChange={(value) => onChange({ slateId: value as ProductTank["slateId"] })}
-            options={SLATE_OPTIONS.map((option) => ({ id: option.id, label: option.label }))}
+            options={SLATE_OPTIONS.map((option) => ({
+              id: option.id,
+              label: `${option.label} · ${option.region}`,
+            }))}
           />
           <FieldSelect
             label="Season"

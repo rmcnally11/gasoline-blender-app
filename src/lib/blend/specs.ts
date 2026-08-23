@@ -4,8 +4,8 @@ export const SLATE_OPTIONS: { id: SlateId; label: string; region: string }[] = [
   { id: "cpl-cbob", label: "CPL CBOB", region: "Colonial" },
   { id: "explorer-cbob", label: "Explorer CBOB", region: "Explorer" },
   { id: "sfpp-carbob", label: "SFPP CARBOB", region: "West Coast" },
-  { id: "mexico-zmvm", label: "Mexico ZMVM", region: "NOM-016 CDMX" },
-  { id: "mexico-resto", label: "Mexico resto", region: "NOM-016" },
+  { id: "mexico-zmvm", label: "Mexico ZMVM", region: "Mexico" },
+  { id: "mexico-resto", label: "Mexico resto", region: "Mexico" },
 ];
 
 export const GRADE_OPTIONS: { id: GradeId; label: string; akiMin: number; rackPerGal: number }[] = [

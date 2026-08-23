@@ -7,7 +7,7 @@ export default function P2Page() {
   return (
     <AppShell
       title="P2"
-      subtitle="Finished-product tank. Changes here re-solve the whole plant because P1 and P3 draw from the same barrels."
+      subtitle="Finished-product tank. Defaults to Explorer, so it has its own Midwest pool. Switching the slate moves this tank onto another region's barrels."
     >
       <TankPage tankId="P2" />
     </AppShell>

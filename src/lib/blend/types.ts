@@ -1,13 +1,28 @@
 export type BlendstockId = string;
+export type StreamKey =
+  | "nbutane"
+  | "isomerate"
+  | "lsr"
+  | "heavy-naphtha"
+  | "reformate"
+  | "fcc"
+  | "alkylate"
+  | "lhc"
+  | "ethanol"
+  | "natural"
+  | "raffinate";
 export type TankId = "P1" | "P2" | "P3";
 export type GradeId = "regular" | "midgrade" | "premium";
 export type SeasonId = "summer78" | "summer90" | "summer115" | "winter135" | "winter150";
 export type EthanolMode = "e0" | "e10" | "flex";
 export type SlateId = "cpl-cbob" | "explorer-cbob" | "sfpp-carbob" | "mexico-zmvm" | "mexico-resto";
+export type RegionId = "colonial" | "explorer" | "west-coast" | "mexico";
 export type NaphthaKind = "light" | "heavy" | null;
 
 export interface Blendstock {
   id: BlendstockId;
+  streamKey: StreamKey;
+  regionId: RegionId;
   name: string;
   shortName: string;
   family: string;
@@ -173,6 +188,7 @@ export interface QualityDebit {
 }
 
 export interface NaphthaSeekResult {
+  regionId: RegionId;
   kind: Exclude<NaphthaKind, null>;
   offerPrice: number;
   impliedValue: number | null;

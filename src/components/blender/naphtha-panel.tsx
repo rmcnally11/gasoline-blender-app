@@ -9,6 +9,7 @@ import { ActionButton } from "./action-button";
 import { NumberField } from "./number-field";
 
 export function NaphthaPanel({
+  regionLabel,
   lightPrice,
   heavyPrice,
   lightResult,
@@ -17,6 +18,7 @@ export function NaphthaPanel({
   onPriceChange,
   onSeek,
 }: {
+  regionLabel: string;
   lightPrice: number;
   heavyPrice: number;
   lightResult: NaphthaSeekResult | null;
@@ -30,10 +32,11 @@ export function NaphthaPanel({
       <CardHeader className="border-b">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <CardTitle>Naphtha goal-seek</CardTitle>
+            <CardTitle>{regionLabel} naphtha goal-seek</CardTitle>
             <CardDescription>
-              At what purchase price does light or heavy naphtha still make an on-spec
-              domestic barrel after sulfur, benzene, distillation, and RVO?
+              At what purchase price does this region&apos;s light or heavy naphtha still make an
+              on-spec domestic barrel after sulfur, benzene, distillation, and RVO? Other
+              regions keep their own cargoes.
             </CardDescription>
           </div>
           <ActionButton onClick={onSeek} busy={busy}>

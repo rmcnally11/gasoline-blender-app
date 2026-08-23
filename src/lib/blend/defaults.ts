@@ -1,20 +1,14 @@
+import { regionForSlate } from "./regions";
 import { DEFAULT_RVO } from "./rvo";
-import {
-  buildSpecs,
-  defaultEthanolMode,
-  GRADE_OPTIONS,
-  rackPricePerBbl,
-} from "./specs";
-import type { Blendstock, EthanolMode, Plant, ProductTank, SlateId, TankId } from "./types";
+import { buildSpecs, defaultEthanolMode, GRADE_OPTIONS, rackPricePerBbl } from "./specs";
+import type { Blendstock, Plant, ProductTank, RegionId, SlateId, StreamKey, TankId } from "./types";
 
-function stream(partial: Blendstock): Blendstock {
-  return partial;
-}
+type StreamBase = Omit<Blendstock, "id" | "regionId">;
 
-export function defaultComponents(): Blendstock[] {
+function colonialStreams(): StreamBase[] {
   return [
-    stream({
-      id: "nbutane",
+    {
+      streamKey: "nbutane",
       name: "n-Butane",
       shortName: "nC4",
       family: "LPG",
@@ -41,9 +35,9 @@ export function defaultComponents(): Blendstock[] {
       maxVolPct: 8,
       enabled: true,
       naphtha: null,
-    }),
-    stream({
-      id: "isomerate",
+    },
+    {
+      streamKey: "isomerate",
       name: "Isomerate",
       shortName: "ISO",
       family: "Light naphtha",
@@ -70,9 +64,9 @@ export function defaultComponents(): Blendstock[] {
       maxVolPct: 35,
       enabled: true,
       naphtha: null,
-    }),
-    stream({
-      id: "lsr",
+    },
+    {
+      streamKey: "lsr",
       name: "Light naphtha",
       shortName: "LN",
       family: "Naphtha",
@@ -99,9 +93,9 @@ export function defaultComponents(): Blendstock[] {
       maxVolPct: 30,
       enabled: true,
       naphtha: "light",
-    }),
-    stream({
-      id: "heavy-naphtha",
+    },
+    {
+      streamKey: "heavy-naphtha",
       name: "Heavy naphtha",
       shortName: "HN",
       family: "Naphtha",
@@ -128,9 +122,9 @@ export function defaultComponents(): Blendstock[] {
       maxVolPct: 25,
       enabled: true,
       naphtha: "heavy",
-    }),
-    stream({
-      id: "reformate",
+    },
+    {
+      streamKey: "reformate",
       name: "Reformate",
       shortName: "REF",
       family: "Aromatic",
@@ -157,9 +151,9 @@ export function defaultComponents(): Blendstock[] {
       maxVolPct: 40,
       enabled: true,
       naphtha: null,
-    }),
-    stream({
-      id: "fcc",
+    },
+    {
+      streamKey: "fcc",
       name: "FCC gasoline",
       shortName: "FCC",
       family: "Cracked",
@@ -186,9 +180,9 @@ export function defaultComponents(): Blendstock[] {
       maxVolPct: 50,
       enabled: true,
       naphtha: null,
-    }),
-    stream({
-      id: "alkylate",
+    },
+    {
+      streamKey: "alkylate",
       name: "Alkylate",
       shortName: "ALK",
       family: "Alkylate",
@@ -215,9 +209,9 @@ export function defaultComponents(): Blendstock[] {
       maxVolPct: 50,
       enabled: true,
       naphtha: null,
-    }),
-    stream({
-      id: "lhc",
+    },
+    {
+      streamKey: "lhc",
       name: "Light hydrocrackate",
       shortName: "LHC",
       family: "Hydrocrackate",
@@ -244,9 +238,9 @@ export function defaultComponents(): Blendstock[] {
       maxVolPct: 30,
       enabled: true,
       naphtha: null,
-    }),
-    stream({
-      id: "ethanol",
+    },
+    {
+      streamKey: "ethanol",
       name: "Ethanol",
       shortName: "EtOH",
       family: "Oxygenate",
@@ -273,9 +267,9 @@ export function defaultComponents(): Blendstock[] {
       maxVolPct: 10,
       enabled: true,
       naphtha: null,
-    }),
-    stream({
-      id: "natural",
+    },
+    {
+      streamKey: "natural",
       name: "Natural gasoline",
       shortName: "NG",
       family: "Condensate",
@@ -302,9 +296,9 @@ export function defaultComponents(): Blendstock[] {
       maxVolPct: 20,
       enabled: true,
       naphtha: null,
-    }),
-    stream({
-      id: "raffinate",
+    },
+    {
+      streamKey: "raffinate",
       name: "Raffinate",
       shortName: "RAF",
       family: "Extract bottoms",
@@ -331,13 +325,132 @@ export function defaultComponents(): Blendstock[] {
       maxVolPct: 15,
       enabled: true,
       naphtha: null,
-    }),
+    },
   ];
 }
 
-export function applyEthanolMode(components: Blendstock[], mode: EthanolMode): Blendstock[] {
+function stampPool(regionId: RegionId, patches: Partial<Record<StreamKey, Partial<Blendstock>>>): Blendstock[] {
+  return colonialStreams().map((stream) => {
+    const patch = patches[stream.streamKey] ?? {};
+    const inventoryBbl = patch.inventoryBbl ?? stream.inventoryBbl;
+    return {
+      ...stream,
+      ...patch,
+      streamKey: stream.streamKey,
+      regionId,
+      id: `${regionId}-${stream.streamKey}`,
+      inventoryBbl,
+      maxLiftBbl: patch.maxLiftBbl ?? inventoryBbl,
+    };
+  });
+}
+
+export function defaultPool(regionId: RegionId): Blendstock[] {
+  switch (regionId) {
+    case "colonial":
+      return stampPool("colonial", {});
+    case "explorer":
+      return stampPool("explorer", {
+        nbutane: { inventoryBbl: 350, costPerBbl: 48 },
+        isomerate: { inventoryBbl: 900, costPerBbl: 90 },
+        lsr: { inventoryBbl: 1100, costPerBbl: 70, sulfurPpm: 28 },
+        "heavy-naphtha": { inventoryBbl: 800, costPerBbl: 66, sulfurPpm: 70, benzeneVolPct: 1.6 },
+        reformate: { inventoryBbl: 1200, costPerBbl: 102, benzeneVolPct: 2.1 },
+        fcc: { inventoryBbl: 2200, costPerBbl: 89, sulfurPpm: 22 },
+        alkylate: { inventoryBbl: 700, costPerBbl: 121 },
+        lhc: { inventoryBbl: 1400, costPerBbl: 82 },
+        ethanol: { inventoryBbl: 600, costPerBbl: 73 },
+        natural: { inventoryBbl: 1400, costPerBbl: 71, sulfurPpm: 22 },
+        raffinate: { inventoryBbl: 400, costPerBbl: 66 },
+      });
+    case "west-coast":
+      return stampPool("west-coast", {
+        nbutane: { inventoryBbl: 120, costPerBbl: 52, maxVolPct: 2 },
+        isomerate: { inventoryBbl: 1800, costPerBbl: 96, rvp: 10.8, t50F: 145, e200VolPct: 88 },
+        lsr: { inventoryBbl: 500, costPerBbl: 78, sulfurPpm: 6, benzeneVolPct: 0.2, rvp: 9.5, t90F: 230 },
+        "heavy-naphtha": {
+          inventoryBbl: 250,
+          costPerBbl: 74,
+          sulfurPpm: 10,
+          benzeneVolPct: 0.7,
+          aromaticsVolPct: 10,
+          t90F: 320,
+          enabled: false,
+        },
+        reformate: {
+          inventoryBbl: 1600,
+          costPerBbl: 112,
+          benzeneVolPct: 0.55,
+          aromaticsVolPct: 58,
+          rvp: 3.6,
+          t50F: 208,
+          t90F: 312,
+          e200VolPct: 30,
+          e300VolPct: 78,
+        },
+        fcc: {
+          inventoryBbl: 2200,
+          costPerBbl: 102,
+          sulfurPpm: 5,
+          benzeneVolPct: 0.4,
+          aromaticsVolPct: 22,
+          olefinsVolPct: 7,
+          rvp: 6.0,
+          t50F: 198,
+          t90F: 312,
+          e200VolPct: 48,
+          e300VolPct: 82,
+        },
+        alkylate: {
+          inventoryBbl: 3600,
+          costPerBbl: 128,
+          rvp: 4.2,
+          t50F: 205,
+          t90F: 275,
+          e200VolPct: 42,
+          e300VolPct: 90,
+        },
+        lhc: { inventoryBbl: 1600, costPerBbl: 90, rvp: 6.4, t50F: 190, t90F: 300, e200VolPct: 52, e300VolPct: 86 },
+        ethanol: { inventoryBbl: 900, costPerBbl: 76 },
+        natural: { inventoryBbl: 150, costPerBbl: 80, enabled: false },
+        raffinate: { inventoryBbl: 200, costPerBbl: 72, maxVolPct: 6, t90F: 310 },
+      });
+    case "mexico":
+      return stampPool("mexico", {
+        nbutane: { inventoryBbl: 400, costPerBbl: 44 },
+        isomerate: { inventoryBbl: 1800, costPerBbl: 84 },
+        lsr: { inventoryBbl: 1400, costPerBbl: 64, sulfurPpm: 45, benzeneVolPct: 0.7 },
+        "heavy-naphtha": { inventoryBbl: 900, costPerBbl: 60, sulfurPpm: 110, benzeneVolPct: 2.2 },
+        reformate: { inventoryBbl: 1000, costPerBbl: 98, benzeneVolPct: 3.0, aromaticsVolPct: 68 },
+        fcc: {
+          inventoryBbl: 2400,
+          costPerBbl: 86,
+          sulfurPpm: 28,
+          benzeneVolPct: 0.85,
+          aromaticsVolPct: 22,
+          olefinsVolPct: 9,
+        },
+        alkylate: { inventoryBbl: 1800, costPerBbl: 112 },
+        lhc: { inventoryBbl: 1100, costPerBbl: 78 },
+        ethanol: { inventoryBbl: 400, costPerBbl: 78 },
+        natural: { inventoryBbl: 1100, costPerBbl: 68, sulfurPpm: 40, benzeneVolPct: 0.5 },
+        raffinate: { inventoryBbl: 500, costPerBbl: 62 },
+      });
+  }
+}
+
+export function defaultComponents(): Blendstock[] {
+  return [
+    ...defaultPool("colonial"),
+    ...defaultPool("explorer"),
+    ...defaultPool("west-coast"),
+    ...defaultPool("mexico"),
+  ];
+}
+
+export function applyEthanolMode(components: Blendstock[], mode: import("./types").EthanolMode): Blendstock[] {
   return components.map((component) => {
-    if (component.id !== "ethanol") return component;
+    if (component.streamKey !== "ethanol") return component;
     if (mode === "e0") {
       return { ...component, enabled: false, minVolPct: 0, maxVolPct: 0 };
     }
@@ -382,7 +495,7 @@ export function createDefaultPlant(): Plant {
   return {
     complianceOverlay,
     rvo: { ...DEFAULT_RVO },
-    components: applyEthanolMode(defaultComponents(), "e10"),
+    components: defaultComponents(),
     tanks: [
       makeTank("P1", "P1", "regular", "cpl-cbob", 8000, 2200, complianceOverlay),
       makeTank("P2", "P2", "regular", "explorer-cbob", 1500, 800, complianceOverlay),
@@ -402,4 +515,8 @@ export function refreshTankSpecs(tank: ProductTank, complianceOverlay: boolean):
 
 export function gradeLabel(gradeId: ProductTank["gradeId"]): string {
   return GRADE_OPTIONS.find((item) => item.id === gradeId)?.label ?? gradeId;
+}
+
+export function tankRegion(tank: ProductTank): RegionId {
+  return regionForSlate(tank.slateId);
 }

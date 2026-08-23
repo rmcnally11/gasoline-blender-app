@@ -16,7 +16,7 @@ export function rvoNetCost(rvo: RvoSettings, finishedBbl: number, ethanolBbl: nu
 }
 
 export function isEthanol(component: Blendstock): boolean {
-  return component.id === "ethanol";
+  return component.streamKey === "ethanol";
 }
 
 export const DEFAULT_RVO: RvoSettings = {

@@ -1,5 +1,6 @@
 import { componentDiBase } from "./distillation";
 import { aki, rvpBlendingIndex } from "./math";
+import { componentsForTank, regionForSlate, regionLabel } from "./regions";
 import { effectiveRvpLimit, emptyMultiRecipe, predictProperties, recipeFromBarrels } from "./properties";
 import { isEthanol, rinCreditPerEthanolBbl, rvoCostPerFinishedBbl, rvoNetCost } from "./rvo";
 import { solveLinearProgram, type LinearConstraint } from "./simplex";
@@ -176,66 +177,75 @@ function qualityConstraints(tank: ProductTank, comps: Blendstock[], demand: numb
 
 export function optimizePlant(plant: Plant): PlantSolve {
   const tanks = plant.tanks.filter((tank) => tank.enabled && tank.demandBbl > 1e-6);
-  const comps = plant.components.filter((component) => component.enabled);
-  if (tanks.length === 0 || comps.length === 0) {
+  if (tanks.length === 0) {
     return emptySolve(plant, "Enable a tank and at least one blendstock.", "infeasible");
   }
 
-  const nT = tanks.length;
-  const nC = comps.length;
-  const n = nT * nC;
+  type Var = { tank: ProductTank; component: Blendstock };
+  const vars: Var[] = [];
+  for (const tank of tanks) {
+    const comps = componentsForTank(plant.components, tank).filter((component) => component.enabled);
+    if (comps.length === 0) {
+      return emptySolve(
+        plant,
+        `No enabled blendstocks in the ${regionLabel(regionForSlate(tank.slateId))} pool for ${tank.id}.`,
+        "infeasible",
+      );
+    }
+    for (const component of comps) {
+      vars.push({ tank, component });
+    }
+  }
+
+  const n = vars.length;
   const rvoPerBbl = rvoCostPerFinishedBbl(plant.rvo);
   const ethanolCredit = rinCreditPerEthanolBbl(plant.rvo);
 
-  const costs = Array.from({ length: n }, (_, index) => {
-    const tank = tanks[Math.floor(index / nC)];
-    const component = comps[index % nC];
+  const costs = vars.map(({ tank, component }) => {
     let cost = component.costPerBbl - tank.rackPricePerBbl + rvoPerBbl;
     if (isEthanol(component)) cost -= ethanolCredit;
     return cost;
   });
 
   const lower = Array.from({ length: n }, () => 0);
-  const upper = Array.from({ length: n }, (_, index) => {
-    const tank = tanks[Math.floor(index / nC)];
-    const component = comps[index % nC];
+  const upper = Array.from({ length: n }, () => 0);
+  for (let i = 0; i < n; i += 1) {
+    const { tank, component } = vars[i];
     if (isEthanol(component)) {
-      return ethanolBounds(tank).max * tank.demandBbl;
-    }
-    return Math.min(component.maxLiftBbl, (component.maxVolPct / 100) * tank.demandBbl, tank.demandBbl);
-  });
-
-  for (let t = 0; t < nT; t += 1) {
-    const tank = tanks[t];
-    const etoh = comps.findIndex((component) => isEthanol(component));
-    if (etoh >= 0) {
-      lower[t * nC + etoh] = ethanolBounds(tank).min * tank.demandBbl;
-    }
-    for (let c = 0; c < nC; c += 1) {
-      const component = comps[c];
-      if (isEthanol(component)) continue;
-      lower[t * nC + c] = (component.minVolPct / 100) * tank.demandBbl;
+      const bounds = ethanolBounds(tank);
+      lower[i] = bounds.min * tank.demandBbl;
+      upper[i] = bounds.max * tank.demandBbl;
+    } else {
+      lower[i] = (component.minVolPct / 100) * tank.demandBbl;
+      upper[i] = Math.min(component.maxLiftBbl, (component.maxVolPct / 100) * tank.demandBbl, tank.demandBbl);
     }
   }
 
   const constraints: LinearConstraint[] = [];
 
-  for (let t = 0; t < nT; t += 1) {
-    const tank = tanks[t];
-    const coeffs = Array.from({ length: n }, (_, index) => (Math.floor(index / nC) === t ? 1 : 0));
+  for (const tank of tanks) {
+    const coeffs = vars.map((item) => (item.tank.id === tank.id ? 1 : 0));
     constraints.push({ name: `${tank.id}-volume`, coeffs, sense: "=", rhs: tank.demandBbl });
 
-    const local = qualityConstraints(tank, comps, tank.demandBbl, tank.id);
+    const tankComps = vars.filter((item) => item.tank.id === tank.id).map((item) => item.component);
+    const local = qualityConstraints(tank, tankComps, tank.demandBbl, tank.id);
     for (const row of local) {
       const padded = Array.from({ length: n }, () => 0);
-      for (let c = 0; c < nC; c += 1) padded[t * nC + c] = row.coeffs[c] ?? 0;
+      let cursor = 0;
+      for (let i = 0; i < n; i += 1) {
+        if (vars[i].tank.id !== tank.id) continue;
+        padded[i] = row.coeffs[cursor] ?? 0;
+        cursor += 1;
+      }
       constraints.push({ ...row, coeffs: padded });
     }
   }
 
-  for (let c = 0; c < nC; c += 1) {
-    const component = comps[c];
-    const coeffs = Array.from({ length: n }, (_, index) => (index % nC === c ? 1 : 0));
+  const seen = new Set<string>();
+  for (const { component } of vars) {
+    if (seen.has(component.id)) continue;
+    seen.add(component.id);
+    const coeffs = vars.map((item) => (item.component.id === component.id ? 1 : 0));
     constraints.push({
       name: `${component.id}-inventory`,
       coeffs,
@@ -257,7 +267,7 @@ export function optimizePlant(plant: Plant): PlantSolve {
     return emptySolve(
       plant,
       result.status === "infeasible"
-        ? "No feasible allocation across P1/P2/P3 with the current inventories, ethanol locks, and spec slates."
+        ? "No feasible allocation. Each tank only draws from its own regional pool — Colonial, Explorer, West Coast, and Mexico do not share barrels."
         : "The plant LP was unbounded.",
       result.status,
     );
@@ -271,22 +281,22 @@ export function optimizePlant(plant: Plant): PlantSolve {
     plant.components.map((component) => [component.id, 0]),
   );
 
-  for (let t = 0; t < nT; t += 1) {
-    for (let c = 0; c < nC; c += 1) {
-      const barrels = Math.max(0, result.x[t * nC + c] ?? 0);
-      recipe.barrels[tanks[t].id][comps[c].id] = barrels;
-      componentUsedBbl[comps[c].id] += barrels;
-    }
+  for (let i = 0; i < n; i += 1) {
+    const barrels = Math.max(0, result.x[i] ?? 0);
+    const { tank, component } = vars[i];
+    recipe.barrels[tank.id][component.id] = barrels;
+    componentUsedBbl[component.id] += barrels;
   }
 
   const tankSolves: TankSolve[] = plant.tanks.map((tank) => {
     const barrels = recipe.barrels[tank.id] ?? {};
     const tankRecipe: Recipe = recipeFromBarrels(barrels);
+    const pool = componentsForTank(plant.components, tank);
     return {
       tankId: tank.id,
       recipe: tankRecipe,
       barrels,
-      properties: tank.enabled && tank.demandBbl > 0 ? predictProperties(plant.components, tankRecipe) : null,
+      properties: tank.enabled && tank.demandBbl > 0 ? predictProperties(pool, tankRecipe) : null,
     };
   });
 
@@ -297,7 +307,8 @@ export function optimizePlant(plant: Plant): PlantSolve {
   for (const tank of tanks) {
     finishedBbl += tank.demandBbl;
     revenue += tank.rackPricePerBbl * tank.demandBbl;
-    for (const component of comps) {
+    const pool = componentsForTank(plant.components, tank);
+    for (const component of pool) {
       const used = recipe.barrels[tank.id][component.id] ?? 0;
       blendCost += used * component.costPerBbl;
       if (isEthanol(component)) ethanolBbl += used;
@@ -306,7 +317,7 @@ export function optimizePlant(plant: Plant): PlantSolve {
   const rvoCost = rvoNetCost(plant.rvo, finishedBbl, ethanolBbl);
   return {
     status: "optimal",
-    message: "Minimum-cost allocation of the shared pool into P1, P2, and P3.",
+    message: "Minimum-cost allocation. Each tank draws only from its regional pool.",
     recipe,
     tanks: tankSolves,
     componentUsedBbl,
@@ -333,7 +344,9 @@ export function optimizeBlendFromPlant(plant: Plant, tankId: TankId = "P1"): Opt
   };
   const result = optimizePlant(isolated);
   const tank = result.tanks.find((item) => item.tankId === tankId);
-  const recipe = tank?.recipe ?? emptyRecipe(plant.components);
+  const source = plant.tanks.find((item) => item.id === tankId);
+  const pool = source ? componentsForTank(plant.components, source) : plant.components;
+  const recipe = tank?.recipe ?? emptyRecipe(pool);
   const total = Object.values(recipe.volumes).reduce((acc, value) => acc + value, 0);
   const fractions: Recipe = {
     volumes: Object.fromEntries(

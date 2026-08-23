@@ -1,17 +1,20 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { BlendstockTable } from "./blendstock-table";
+import { regionLabel } from "@/lib/blend";
 import { NaphthaPanel } from "./naphtha-panel";
 import { NumberField } from "./number-field";
+import { PoolCard } from "./pool-card";
 import { usePlant } from "./plant-context";
+import { RegionSwitcher } from "./region-switcher";
 
 export function PlantDesk() {
   const {
     plant,
     solve,
+    activeRegion,
+    setActiveRegion,
     lightPrice,
     heavyPrice,
     lightResult,
@@ -71,7 +74,19 @@ export function PlantDesk() {
         </label>
       </div>
 
+      <section className="space-y-3">
+        <div className="space-y-1">
+          <h2 className="text-sm font-medium">Regional pools</h2>
+          <p className="text-xs text-muted-foreground">
+            Colonial, Explorer, West Coast, and Mexico each have their own barrels. A tank only
+            draws from the pool that matches its spec slate.
+          </p>
+        </div>
+        <RegionSwitcher plant={plant} value={activeRegion} onChange={setActiveRegion} />
+      </section>
+
       <NaphthaPanel
+        regionLabel={regionLabel(activeRegion)}
         lightPrice={lightPrice}
         heavyPrice={heavyPrice}
         lightResult={lightResult}
@@ -84,23 +99,13 @@ export function PlantDesk() {
         onSeek={runSeek}
       />
 
-      <Card size="sm">
-        <CardHeader className="border-b">
-          <CardTitle>Shared blendstock pool</CardTitle>
-          <CardDescription>
-            Inventories are barrels available this cycle. Used is the sum across P1, P2, and P3.
-            Open a tank page to edit that grade without the other two stacked beside it.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <BlendstockTable
-            components={plant.components}
-            usedBbl={solve.componentUsedBbl}
-            onComponentChange={updateComponent}
-            onEdit={setEditingId}
-          />
-        </CardContent>
-      </Card>
+      <PoolCard
+        plant={plant}
+        regionId={activeRegion}
+        usedBbl={solve.componentUsedBbl}
+        onComponentChange={updateComponent}
+        onEdit={setEditingId}
+      />
     </>
   );
 }

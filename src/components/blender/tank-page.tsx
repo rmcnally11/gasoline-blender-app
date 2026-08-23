@@ -1,13 +1,14 @@
 "use client";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import type { TankId } from "@/lib/blend";
+import { componentsForTank, regionForSlate, type TankId } from "@/lib/blend";
+import { PoolCard } from "./pool-card";
 import { TankCard } from "./tank-card";
 import { usePlant } from "./plant-context";
 import { AlertTriangle } from "lucide-react";
 
 export function TankPage({ tankId }: { tankId: TankId }) {
-  const { plant, solve, tankById, updateTank, updateTankSpecs } = usePlant();
+  const { plant, solve, tankById, updateTank, updateTankSpecs, updateComponent, setEditingId } = usePlant();
   const tank = tankById(tankId);
 
   if (!tank) {
@@ -21,13 +22,22 @@ export function TankPage({ tankId }: { tankId: TankId }) {
   }
 
   return (
-    <TankCard
-      tank={tank}
-      components={plant.components}
-      solve={solve}
-      complianceOverlay={plant.complianceOverlay}
-      onChange={(patch) => updateTank(tank.id, patch)}
-      onSpecChange={(patch) => updateTankSpecs(tank.id, patch)}
-    />
+    <>
+      <TankCard
+        tank={tank}
+        components={componentsForTank(plant.components, tank)}
+        solve={solve}
+        complianceOverlay={plant.complianceOverlay}
+        onChange={(patch) => updateTank(tank.id, patch)}
+        onSpecChange={(patch) => updateTankSpecs(tank.id, patch)}
+      />
+      <PoolCard
+        plant={plant}
+        regionId={regionForSlate(tank.slateId)}
+        usedBbl={solve.componentUsedBbl}
+        onComponentChange={updateComponent}
+        onEdit={setEditingId}
+      />
+    </>
   );
 }

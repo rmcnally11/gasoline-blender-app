@@ -4,6 +4,7 @@ export * from "./goalseek";
 export * from "./math";
 export * from "./optimize";
 export * from "./properties";
+export * from "./regions";
 export * from "./rvo";
 export * from "./specs";
 export * from "./types";

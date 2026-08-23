@@ -7,7 +7,7 @@ export default function P3Page() {
   return (
     <AppShell
       title="P3"
-      subtitle="Finished-product tank. Check binding octane, benzene, and DI after you solve."
+      subtitle="Finished-product tank. Starts on Colonial with P1. Change the slate if this tank should draw Explorer, West Coast, or Mexico barrels instead."
     >
       <TankPage tankId="P3" />
     </AppShell>

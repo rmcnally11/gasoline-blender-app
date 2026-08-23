@@ -25,7 +25,7 @@ export function EconomicsStrip() {
       </div>
       <dl className="grid grid-cols-2 gap-2 md:grid-cols-4">
         <Metric label="Rack" value={formatPerGal(revenue)} hint="Weighted tank rack" />
-        <Metric label="Blend cost" value={formatPerGal(blend)} hint="Components into the three tanks" />
+        <Metric label="Blend cost" value={formatPerGal(blend)} hint="Regional pools into the three tanks" />
         <Metric label="RVO net" value={formatPerGal(rvo)} hint="Obligation − ethanol RINs" />
         <Metric
           label="Margin"

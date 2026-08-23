@@ -3,8 +3,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   createDefaultPlant,
+  defaultEthanolMode,
   optimizePlant,
   refreshTankSpecs,
+  regionForSlate,
+  regionLabel,
   seekNaphtha,
   type Blendstock,
   type NaphthaSeekResult,
@@ -12,9 +15,29 @@ import {
   type PlantSolve,
   type ProductSpecs,
   type ProductTank,
+  type RegionId,
   type SolverStatus,
   type TankId,
 } from "@/lib/blend";
+
+type RegionPrices = Record<RegionId, { light: number; heavy: number }>;
+type RegionSeeks = Record<RegionId, { light: NaphthaSeekResult | null; heavy: NaphthaSeekResult | null }>;
+
+const DEFAULT_PRICES: RegionPrices = {
+  colonial: { light: 72, heavy: 68 },
+  explorer: { light: 70, heavy: 66 },
+  "west-coast": { light: 78, heavy: 74 },
+  mexico: { light: 64, heavy: 60 },
+};
+
+function emptySeeks(): RegionSeeks {
+  return {
+    colonial: { light: null, heavy: null },
+    explorer: { light: null, heavy: null },
+    "west-coast": { light: null, heavy: null },
+    mexico: { light: null, heavy: null },
+  };
+}
 
 type BusyKind = "solve" | "seek" | null;
 
@@ -25,6 +48,8 @@ type PlantContextValue = {
   dirty: boolean;
   busy: BusyKind;
   lastAction: string | null;
+  activeRegion: RegionId;
+  setActiveRegion: (regionId: RegionId) => void;
   lightPrice: number;
   heavyPrice: number;
   lightResult: NaphthaSeekResult | null;
@@ -50,7 +75,7 @@ const PlantContext = createContext<PlantContextValue | null>(null);
 function emptySolve(): PlantSolve {
   return {
     status: "idle",
-    message: "Press Solve plant to allocate the shared pool.",
+    message: "Press Solve plant to allocate each regional pool.",
     recipe: { barrels: { P1: {}, P2: {}, P3: {} } },
     tanks: [
       { tankId: "P1", recipe: { volumes: {} }, barrels: {}, properties: null },
@@ -72,18 +97,22 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
   const [dirty, setDirty] = useState(true);
   const [busy, setBusy] = useState<BusyKind>(null);
   const [lastAction, setLastAction] = useState<string | null>(null);
-  const [lightPrice, setLightPriceState] = useState(72);
-  const [heavyPrice, setHeavyPriceState] = useState(68);
-  const [lightResult, setLightResult] = useState<NaphthaSeekResult | null>(null);
-  const [heavyResult, setHeavyResult] = useState<NaphthaSeekResult | null>(null);
+  const [activeRegion, setActiveRegion] = useState<RegionId>("colonial");
+  const [regionPrices, setRegionPrices] = useState<RegionPrices>(DEFAULT_PRICES);
+  const [regionSeeks, setRegionSeeks] = useState<RegionSeeks>(emptySeeks);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const plantRef = useRef(plant);
-  const lightRef = useRef(lightPrice);
-  const heavyRef = useRef(heavyPrice);
+  const pricesRef = useRef(regionPrices);
+  const regionRef = useRef(activeRegion);
   plantRef.current = plant;
-  lightRef.current = lightPrice;
-  heavyRef.current = heavyPrice;
+  pricesRef.current = regionPrices;
+  regionRef.current = activeRegion;
+
+  const lightPrice = regionPrices[activeRegion].light;
+  const heavyPrice = regionPrices[activeRegion].heavy;
+  const lightResult = regionSeeks[activeRegion].light;
+  const heavyResult = regionSeeks[activeRegion].heavy;
 
   const applySolve = useCallback((next: Plant, label: string) => {
     const result = optimizePlant(next);
@@ -111,9 +140,16 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
     window.setTimeout(() => {
       try {
         const current = plantRef.current;
-        setLightResult(seekNaphtha(current, "light", lightRef.current));
-        setHeavyResult(seekNaphtha(current, "heavy", heavyRef.current));
-        setLastAction("Goal-seek finished.");
+        const region = regionRef.current;
+        const prices = pricesRef.current[region];
+        setRegionSeeks((prev) => ({
+          ...prev,
+          [region]: {
+            light: seekNaphtha(current, region, "light", prices.light),
+            heavy: seekNaphtha(current, region, "heavy", prices.heavy),
+          },
+        }));
+        setLastAction(`Goal-seek finished for ${regionLabel(region)}.`);
       } finally {
         setBusy(null);
       }
@@ -124,18 +160,34 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
     solvePlant();
     window.setTimeout(() => {
       const current = plantRef.current;
-      setLightResult(seekNaphtha(current, "light", lightRef.current));
-      setHeavyResult(seekNaphtha(current, "heavy", heavyRef.current));
+      const prices = pricesRef.current;
+      setRegionSeeks({
+        colonial: {
+          light: seekNaphtha(current, "colonial", "light", prices.colonial.light),
+          heavy: seekNaphtha(current, "colonial", "heavy", prices.colonial.heavy),
+        },
+        explorer: {
+          light: seekNaphtha(current, "explorer", "light", prices.explorer.light),
+          heavy: seekNaphtha(current, "explorer", "heavy", prices.explorer.heavy),
+        },
+        "west-coast": {
+          light: seekNaphtha(current, "west-coast", "light", prices["west-coast"].light),
+          heavy: seekNaphtha(current, "west-coast", "heavy", prices["west-coast"].heavy),
+        },
+        mexico: {
+          light: seekNaphtha(current, "mexico", "light", prices.mexico.light),
+          heavy: seekNaphtha(current, "mexico", "heavy", prices.mexico.heavy),
+        },
+      });
     }, 40);
   }, [solvePlant]);
 
   const resetPlant = useCallback(() => {
     const next = createDefaultPlant();
     applySolve(next, "Plant reset to defaults.");
-    setLightPriceState(72);
-    setHeavyPriceState(68);
-    setLightResult(null);
-    setHeavyResult(null);
+    setRegionPrices(DEFAULT_PRICES);
+    setRegionSeeks(emptySeeks());
+    setActiveRegion("colonial");
   }, [applySolve]);
 
   const updateTank = useCallback((id: TankId, patch: Partial<ProductTank>) => {
@@ -144,10 +196,15 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       ...current,
       tanks: current.tanks.map((tank) => {
         if (tank.id !== id) return tank;
-        return refreshTankSpecs({ ...tank, ...patch }, current.complianceOverlay);
+        const nextTank = { ...tank, ...patch };
+        if (patch.slateId && patch.ethanolMode === undefined) {
+          nextTank.ethanolMode = defaultEthanolMode(patch.slateId);
+        }
+        return refreshTankSpecs(nextTank, current.complianceOverlay);
       }),
     };
     applySolve(next, `${id} updated and re-solved.`);
+    if (patch.slateId) setActiveRegion(regionForSlate(patch.slateId));
   }, [applySolve]);
 
   const updateTankSpecs = useCallback((id: TankId, patch: Partial<ProductSpecs>) => {
@@ -202,6 +259,8 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       dirty,
       busy,
       lastAction,
+      activeRegion,
+      setActiveRegion,
       lightPrice,
       heavyPrice,
       lightResult,
@@ -211,8 +270,18 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       solvePlant,
       resetPlant,
       runSeek,
-      setLightPrice: setLightPriceState,
-      setHeavyPrice: setHeavyPriceState,
+      setLightPrice: (price: number) => {
+        setRegionPrices((current) => ({
+          ...current,
+          [activeRegion]: { ...current[activeRegion], light: price },
+        }));
+      },
+      setHeavyPrice: (price: number) => {
+        setRegionPrices((current) => ({
+          ...current,
+          [activeRegion]: { ...current[activeRegion], heavy: price },
+        }));
+      },
       updateTank,
       updateTankSpecs,
       updateComponent,
@@ -228,6 +297,7 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       dirty,
       busy,
       lastAction,
+      activeRegion,
       lightPrice,
       heavyPrice,
       lightResult,

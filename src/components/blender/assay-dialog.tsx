@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import type { Blendstock } from "@/lib/blend";
+import { regionLabel, type Blendstock } from "@/lib/blend";
 import { NumberField } from "./number-field";
 
 const FIELDS: { key: keyof Blendstock; label: string; step: number; digits: number }[] = [
@@ -53,8 +53,9 @@ export function AssayDialog({
         <DialogHeader>
           <DialogTitle>{component?.name ?? "Blendstock"}</DialogTitle>
           <DialogDescription>
-            Blending assay and tank inventory. Distillation is D86 °F. Octane numbers are
-            blending octanes.
+            {component
+              ? `Assay and inventory for this stream in the ${regionLabel(component.regionId)} pool. Distillation is D86 °F. Octane numbers are blending octanes.`
+              : "Blending assay and tank inventory."}
           </DialogDescription>
         </DialogHeader>
         {component ? (

@@ -7,7 +7,7 @@ export default function P1Page() {
   return (
     <AppShell
       title="P1"
-      subtitle="Finished-product tank. Set grade, slate, season, ethanol, and demand here. The pool is still shared with P2 and P3."
+      subtitle="Finished-product tank. Spec slate picks both the quality limits and the regional blend pool. P3 shares Colonial barrels with this tank; P2 does not."
     >
       <TankPage tankId="P1" />
     </AppShell>

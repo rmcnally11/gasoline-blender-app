@@ -7,7 +7,7 @@ export default function HomePage() {
   return (
     <AppShell
       title="Plant"
-      subtitle="Shared pool, naphtha goal-seek, and plant economics in dollars per finished gallon. Open P1, P2, or P3 for a single blend."
+      subtitle="Each region has its own blend pool. Colonial, Explorer, West Coast, and Mexico do not share barrels. Economics are dollars per finished gallon."
     >
       <PlantDesk />
     </AppShell>
