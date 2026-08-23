@@ -384,9 +384,9 @@ export function createDefaultPlant(): Plant {
     rvo: { ...DEFAULT_RVO },
     components: applyEthanolMode(defaultComponents(), "e10"),
     tanks: [
-      makeTank("P1", "P1 Regular", "regular", "cpl-cbob", 8000, 2200, complianceOverlay),
-      makeTank("P2", "P2 Midgrade", "midgrade", "explorer-cbob", 1500, 800, complianceOverlay),
-      makeTank("P3", "P3 Premium", "premium", "cpl-cbob", 2500, 1100, complianceOverlay),
+      makeTank("P1", "P1", "regular", "cpl-cbob", 8000, 2200, complianceOverlay),
+      makeTank("P2", "P2", "regular", "explorer-cbob", 1500, 800, complianceOverlay),
+      makeTank("P3", "P3", "regular", "cpl-cbob", 2500, 1100, complianceOverlay),
     ],
   };
 }

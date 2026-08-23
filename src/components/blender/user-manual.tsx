@@ -5,8 +5,9 @@ export function UserManual() {
         <h2 className="text-lg font-semibold">What this tool is</h2>
         <p className="text-muted-foreground">
           A three-tank gasoline blend header. P1, P2, and P3 share one blendstock pool.
-          The solver allocates barrels — not just volume percents — so Regular, Midgrade,
-          and Premium compete for alkylate, FCC, ethanol, and naphtha in the same run.
+          The solver allocates barrels — not just volume percents — so P1, P2, and P3
+          compete for alkylate, FCC, ethanol, and naphtha in the same run. Grade is a
+          setting on each tank, not the tank’s name.
         </p>
         <p className="text-muted-foreground">
           Use it to price a domestic barrel, see which spec is binding, and decide whether

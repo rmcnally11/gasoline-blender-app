@@ -11,9 +11,9 @@ import { AlertTriangle } from "lucide-react";
 
 const NAV = [
   { href: "/", label: "Plant" },
-  { href: "/p1", label: "P1 Regular" },
-  { href: "/p2", label: "P2 Midgrade" },
-  { href: "/p3", label: "P3 Premium" },
+  { href: "/p1", label: "P1" },
+  { href: "/p2", label: "P2" },
+  { href: "/p3", label: "P3" },
   { href: "/manual", label: "User manual" },
 ];
 

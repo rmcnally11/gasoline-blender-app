@@ -1,6 +1,6 @@
 # Gasoline blender
 
-A **three-tank gasoline blend header**. P1, P2, and P3 share one blendstock pool. The model allocates barrels to Regular, Midgrade, and Premium against Colonial, Explorer, SFPP, and Mexico specs, then goal-seeks light and heavy naphtha into a domestic barrel.
+A **three-tank gasoline blend header**. P1, P2, and P3 share one blendstock pool. Each tank has its own grade and spec slate (Colonial, Explorer, SFPP, or Mexico). The model allocates barrels across the header, then goal-seeks light and heavy naphtha into a domestic barrel.
 
 ## What it does
 
@@ -29,7 +29,7 @@ Pages: `/` plant desk, `/p1` `/p2` `/p3` one tank each, `/manual` user manual. E
 
 ## How to use it
 
-1. Set P1/P2/P3 demand and slates (CPL regular, Explorer midgrade, CPL premium is the default).
+1. Set each tank's grade, slate, and demand (defaults start all three as regular — P1 CPL, P2 Explorer, P3 CPL).
 2. Press **Solve plant**. Binding sulfur, benzene, octane, RVP, or DI light up on each tank.
 3. Enter a light or heavy naphtha offer and **Goal-seek values**.
 4. If implied value ≥ offer, the naphtha **creates a domestic barrel**. If not, the debit table tells you whether sulfur, benzene, octane, DI, or RVO killed it.
