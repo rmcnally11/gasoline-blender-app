@@ -1,7 +1,8 @@
 "use client";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { componentsForTank, regionForSlate, type TankId } from "@/lib/blend";
+import { componentsForRegion, componentsForTank, regionForSlate, regionLabel, type TankId } from "@/lib/blend";
+import { MarketValues } from "./market-values";
 import { PoolCard } from "./pool-card";
 import { TankCard } from "./tank-card";
 import { usePlant } from "./plant-context";
@@ -30,6 +31,11 @@ export function TankPage({ tankId }: { tankId: TankId }) {
         complianceOverlay={plant.complianceOverlay}
         onChange={(patch) => updateTank(tank.id, patch)}
         onSpecChange={(patch) => updateTankSpecs(tank.id, patch)}
+      />
+      <MarketValues
+        regionLabel={regionLabel(regionForSlate(tank.slateId))}
+        components={componentsForRegion(plant.components, regionForSlate(tank.slateId))}
+        onPriceChange={(id, costPerBbl) => updateComponent(id, { costPerBbl })}
       />
       <PoolCard
         plant={plant}

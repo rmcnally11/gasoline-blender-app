@@ -2,7 +2,8 @@
 
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { regionLabel } from "@/lib/blend";
+import { componentsForRegion, regionLabel } from "@/lib/blend";
+import { MarketValues } from "./market-values";
 import { NaphthaPanel } from "./naphtha-panel";
 import { NumberField } from "./number-field";
 import { PoolCard } from "./pool-card";
@@ -84,6 +85,12 @@ export function PlantDesk() {
         </div>
         <RegionSwitcher plant={plant} value={activeRegion} onChange={setActiveRegion} />
       </section>
+
+      <MarketValues
+        regionLabel={regionLabel(activeRegion)}
+        components={componentsForRegion(plant.components, activeRegion)}
+        onPriceChange={(id, costPerBbl) => updateComponent(id, { costPerBbl })}
+      />
 
       <NaphthaPanel
         regionLabel={regionLabel(activeRegion)}

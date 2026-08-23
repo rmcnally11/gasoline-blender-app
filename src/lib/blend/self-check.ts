@@ -63,6 +63,7 @@ function checkPlant() {
   assert((result.componentUsedBbl["colonial-fcc"] ?? 0) <= (colonialFcc?.inventoryBbl ?? 0) + 1e-6, "Colonial FCC inventory");
   assert((result.componentUsedBbl["explorer-fcc"] ?? 0) <= (explorerFcc?.inventoryBbl ?? 0) + 1e-6, "Explorer FCC inventory");
   assert((p1.barrels["explorer-fcc"] ?? 0) < 1e-6, "P1 cannot lift Explorer FCC");
+  assert(plant.components.some((component) => component.id === "colonial-isooctane"), "Colonial isooctane missing");
 }
 
 function checkSingleTankWrapper() {

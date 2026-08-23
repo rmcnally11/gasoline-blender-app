@@ -7,7 +7,7 @@ export default function HomePage() {
   return (
     <AppShell
       title="Plant"
-      subtitle="Each region has its own blend pool. Colonial, Explorer, West Coast, and Mexico do not share barrels. Economics are dollars per finished gallon."
+      subtitle="Each region has its own blend pool and market values. Type reformate, alkylate, or isooctane in $/bbl or ¢/gal — the header re-solves."
     >
       <PlantDesk />
     </AppShell>

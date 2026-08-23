@@ -30,7 +30,7 @@ Pages: `/` plant desk, `/p1` `/p2` `/p3` one tank each, `/manual` user manual. E
 ## How to use it
 
 1. Set each tank's grade, slate, and demand (defaults: P1 and P3 Colonial regular, P2 Explorer regular).
-2. Open the matching region tab and put in that pool’s inventories and prices.
+2. Open the matching region tab. Set market values ($/bbl or ¢/gal) for reformate, alkylate, isooctane, and the rest — the header re-solves on each price. Then put in inventories.
 3. Press **Solve plant**. Binding sulfur, benzene, octane, RVP, or DI light up on each tank.
 4. Enter a light or heavy naphtha offer on that region and **Goal-seek values**.
 5. If implied value ≥ offer, the naphtha **creates a domestic barrel** in that region.

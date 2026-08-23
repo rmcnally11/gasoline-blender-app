@@ -7,6 +7,7 @@ export type StreamKey =
   | "reformate"
   | "fcc"
   | "alkylate"
+  | "isooctane"
   | "lhc"
   | "ethanol"
   | "natural"

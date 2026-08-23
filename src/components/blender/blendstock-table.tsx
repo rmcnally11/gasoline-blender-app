@@ -28,7 +28,7 @@ export function BlendstockTable({
             <th className="pb-2 text-right font-medium">Inv bbl</th>
             <th className="pb-2 text-right font-medium">Used</th>
             <th className="pb-2 text-right font-medium">Left</th>
-            <th className="pb-2 text-right font-medium">$/bbl</th>
+            <th className="pb-2 text-right font-medium">Market $/bbl</th>
             <th className="pb-2 text-right font-medium">AKI</th>
             <th className="pb-2 text-right font-medium">RVP</th>
             <th className="pb-2 text-right font-medium">S</th>
@@ -87,7 +87,7 @@ export function BlendstockTable({
                 <td className="py-2 text-right font-mono tabular-nums">{formatNumber(left, 0)}</td>
                 <td className="py-2 pl-2">
                   <NumberField
-                    aria-label={`${component.name} cost`}
+                    aria-label={`${component.name} market dollars per barrel`}
                     className="ml-auto w-16"
                     value={component.costPerBbl}
                     step={0.5}

@@ -21,7 +21,8 @@ export function UserManual() {
         <h2 className="text-lg font-semibold">A normal session</h2>
         <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
           <li>Start on <strong className="text-foreground">Plant</strong>. Confirm overlay, RVO rate, and D6 RIN.</li>
-          <li>Pick a region tab. Put in that region’s inventories and $/bbl. Click the pencil for a full assay.</li>
+          <li>Pick a region tab. Set <strong className="text-foreground">market values</strong> in $/bbl or ¢/gal — reformate, alkylate, isooctane, FCC, ethanol, all of them. The header re-solves when a price changes.</li>
+          <li>Put inventories in the pool table. Click the pencil for a full assay. Assay is quality; the market card is price.</li>
           <li>Open <strong className="text-foreground">P1</strong>, then P2, then P3. Set grade, slate, season, ethanol lock, and demand.</li>
           <li>Press <strong className="text-foreground">Solve plant</strong>. The header should say “Plant solved.”</li>
           <li>Economics at the top are <strong className="text-foreground">$/gal</strong> on finished gallons, not a notional header.</li>
@@ -42,6 +43,22 @@ export function UserManual() {
           on Colonial and therefore share Colonial alkylate, FCC, and ethanol. P2 starts on
           Explorer and cannot lift Colonial barrels.
         </p>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-lg font-semibold">Market values</h2>
+        <p className="text-muted-foreground">
+          Each region has a market-values card. That is how you price reformate, alkylate,
+          isooctane, FCC, ethanol, and the rest. Type $/bbl or ¢/gal — they stay in step
+          (42 gallons per barrel). A price change re-solves the header immediately. Raising
+          isooctane or reformate makes the LP use less of it if cheaper barrels still make
+          spec.
+        </p>
+        <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
+          <li><strong className="text-foreground">Isooctane</strong> — purchased 100 AKI (iC8). Its own market, not the same as alkylate.</li>
+          <li><strong className="text-foreground">Alkylate</strong> — refinery alkylate, typically mid-90s AKI.</li>
+          <li><strong className="text-foreground">Reformate</strong> — high-octane aromatic stream. Price it here; assay (benzene, T50) is on the pencil.</li>
+        </ul>
       </section>
 
       <section className="space-y-2">

@@ -28,7 +28,7 @@ const FIELDS: { key: keyof Blendstock; label: string; step: number; digits: numb
   { key: "t90F", label: "T90, °F", step: 1, digits: 0 },
   { key: "e200VolPct", label: "E200, vol%", step: 0.5, digits: 1 },
   { key: "e300VolPct", label: "E300, vol%", step: 0.5, digits: 1 },
-  { key: "costPerBbl", label: "Cost, $/bbl", step: 0.5, digits: 2 },
+  { key: "costPerBbl", label: "Market, $/bbl", step: 0.5, digits: 2 },
   { key: "inventoryBbl", label: "Inventory, bbl", step: 10, digits: 0 },
   { key: "maxLiftBbl", label: "Max lift, bbl", step: 10, digits: 0 },
   { key: "minLiftBbl", label: "Min lift, bbl", step: 10, digits: 0 },

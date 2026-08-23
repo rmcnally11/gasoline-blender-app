@@ -43,3 +43,11 @@ export function formatPerGal(value: number | null | undefined, digits = 4): stri
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
   return `$${formatNumber(value, digits)}/gal`;
 }
+
+export function dollarsPerBblToCentsPerGal(costPerBbl: number): number {
+  return (costPerBbl / 42) * 100;
+}
+
+export function centsPerGalToDollarsPerBbl(centsPerGal: number): number {
+  return (centsPerGal / 100) * 42;
+}

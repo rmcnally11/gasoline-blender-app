@@ -220,16 +220,25 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const updateComponent = useCallback((id: string, patch: Partial<Blendstock>) => {
-    setPlant((current) => ({
+    const keys = Object.keys(patch);
+    const current = plantRef.current;
+    const next: Plant = {
       ...current,
       components: current.components.map((component) =>
         component.id === id ? { ...component, ...patch } : component,
       ),
-    }));
+    };
+    if (keys.length === 1 && keys[0] === "costPerBbl" && patch.costPerBbl !== undefined) {
+      const name = current.components.find((component) => component.id === id)?.name ?? "Stream";
+      applySolve(next, `${name} market set to $${patch.costPerBbl.toFixed(2)}/bbl.`);
+      return;
+    }
+    setPlant(next);
+    plantRef.current = next;
     setSolverStatus("idle");
     setDirty(true);
     setLastAction("Pool edit waiting for Solve plant.");
-  }, []);
+  }, [applySolve]);
 
   const updateRvo = useCallback(<K extends keyof Plant["rvo"]>(key: K, value: Plant["rvo"][K]) => {
     const current = plantRef.current;
