@@ -160,9 +160,13 @@ export interface Plant {
    */
   complianceOverlay: boolean;
   marks: DailyMarks;
+  /** Previous Platts Daily Date row. Weekend/holiday = last settlement, not a fabricated Sunday. */
+  priorMarks: DailyMarks | null;
   marksLoadState: MarksLoadState;
   marksLoadError: string | null;
   componentBook: ComponentBookRow[];
+  bookLoadState: MarksLoadState;
+  bookLoadError: string | null;
   /** DON'T LIFT when book − implied exceeds this, $/bbl. */
   liftEpsilonPerBbl: number;
 }

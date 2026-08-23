@@ -34,6 +34,7 @@ export function ComponentInputs({ regionId }: { regionId?: RegionId }) {
 
   return (
     <div className="space-y-4">
+      {plant.bookLoadError ? <p className="text-xs text-rose-700">{plant.bookLoadError}</p> : null}
       {regions.map((region) => {
         const components = componentsForRegion(plant.components, region.id);
         return (
@@ -141,12 +142,14 @@ export function ComponentInputs({ regionId }: { regionId?: RegionId }) {
                         priced.price === null ? (
                           <p className="text-rose-700">
                             stale / missing
-                            {gcCbob === null ? " — no GC CBOB" : " — type a basis"}
+                            {gcCbob === null ? " — no GC CBOB" : " — empty Airtable basis"}
                           </p>
                         ) : (
                           <p className="font-mono tabular-nums">
                             {formatMoney(priced.price, 3)}/bbl
-                            <span className="ml-1 text-muted-foreground">({priced.origin})</span>
+                            <span className="ml-1 text-muted-foreground">
+                              ({component.priceOrigin === "typed" ? "typed" : bookRow?.source ?? "stale"})
+                            </span>
                           </p>
                         )
                       ) : (

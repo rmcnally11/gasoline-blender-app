@@ -177,6 +177,11 @@ export function plantMoney(plant: Plant, solve: PlantSolve) {
     .map((tank) => tankMoney(plant, solve, tank.id))
     .filter((item): item is TankMoney => item !== null);
   const ethanol = plant.components.find((component) => component.streamKey === "ethanol");
+  const blendCost = tanks.reduce((sum, tank) => sum + tank.blendCost, 0);
+  const revenue = tanks.reduce((sum, tank) => sum + tank.revenue, 0);
+  const rvoNet = tanks.reduce((sum, tank) => sum + tank.rvoNet, 0);
+  const freight = tanks.reduce((sum, tank) => sum + tank.freight, 0);
+  const margin = tanks.reduce((sum, tank) => sum + tank.margin, 0);
   return {
     marksDate: plant.marks?.date ?? null,
     finishedBbl,
@@ -187,16 +192,16 @@ export function plantMoney(plant: Plant, solve: PlantSolve) {
     d6Cts: plant.rvo.d6Cts ?? plant.marks?.d6Cts ?? null,
     d6PerRin: plant.rvo.d6RinPrice,
     d6Stale: Boolean(plant.rvo.d6Stale ?? plant.marks?.d6Stale),
-    blendCost: solve.blendCost,
-    revenue: solve.revenue,
-    rvoNet: solve.rvoCost,
-    freight: solve.freightCost,
-    margin: solve.margin,
-    blendCostPerBbl: solve.blendCost === null ? null : perBbl(solve.blendCost, finishedBbl),
-    revenuePerBbl: solve.revenue === null ? null : perBbl(solve.revenue, finishedBbl),
-    rvoNetPerBbl: solve.rvoCost === null ? null : perBbl(solve.rvoCost, finishedBbl),
-    freightPerBbl: solve.freightCost === null ? null : perBbl(solve.freightCost, finishedBbl),
-    marginPerBbl: solve.margin === null ? null : perBbl(solve.margin, finishedBbl),
+    blendCost,
+    revenue,
+    rvoNet,
+    freight,
+    margin,
+    blendCostPerBbl: perBbl(blendCost, finishedBbl),
+    revenuePerBbl: perBbl(revenue, finishedBbl),
+    rvoNetPerBbl: perBbl(rvoNet, finishedBbl),
+    freightPerBbl: perBbl(freight, finishedBbl),
+    marginPerBbl: perBbl(margin, finishedBbl),
     lines: linesForUsed(plant, solve.componentUsedBbl, solve.impliedValues),
     bindingLine: bindingLineForPlant(plant, solve),
     tanks,

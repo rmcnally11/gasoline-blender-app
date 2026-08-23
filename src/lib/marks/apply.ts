@@ -158,3 +158,12 @@ export function clearTypedForStream(components: Blendstock[], streamKey: string)
       : component,
   );
 }
+
+/** Airtable Component Book refresh overwrites local typed prices on book streams. */
+export function clearTypedForBookStreams(components: Blendstock[]): Blendstock[] {
+  return components.map((component) =>
+    BOOK_KEYS.has(component.streamKey) && component.priceOrigin === "typed"
+      ? { ...component, priceOrigin: undefined }
+      : component,
+  );
+}

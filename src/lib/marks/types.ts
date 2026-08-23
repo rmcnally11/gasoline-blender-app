@@ -40,6 +40,8 @@ export interface DailyMarks {
   d6Stale: boolean;
 }
 
+export type ComponentBookSource = "airtable" | "typed" | "stale";
+
 export interface ComponentBookRow {
   streamKey: BookStreamKey;
   name: string;
@@ -48,12 +50,26 @@ export interface ComponentBookRow {
   /** Absolute $/bbl. Wins over basis when set. */
   overridePerBbl: number | null;
   notes: string;
+  /** Where this row's basis/override came from. Empty Airtable is stale, not a typical spread. */
+  source: ComponentBookSource;
 }
+
+export type MarksFetchFailure = "missing_token" | "airtable_error" | "empty";
 
 export type MarksFetchOk = { ok: true; marks: DailyMarks };
 export type MarksFetchFail = {
   ok: false;
-  reason: "missing_token" | "airtable_error" | "empty";
+  reason: MarksFetchFailure;
   message: string;
 };
 export type MarksFetchResult = MarksFetchOk | MarksFetchFail;
+
+export type ComponentBookFetchResult =
+  | { ok: true; rows: ComponentBookRow[] }
+  | { ok: false; reason: MarksFetchFailure; message: string };
+
+/** Latest + prior Platts Daily rows and the Component Book table. */
+export type MarksApiPayload = MarksFetchResult & {
+  priorMarks: DailyMarks | null;
+  book: ComponentBookFetchResult;
+};

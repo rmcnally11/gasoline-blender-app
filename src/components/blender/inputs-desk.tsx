@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { REGION_OPTIONS } from "@/lib/blend";
+import { ComponentBookCard } from "./component-book";
 import { ComponentInputs } from "./component-inputs";
 import { MarksHeader } from "./marks-header";
 import { MobileWorkspace } from "./mobile-workspace";
@@ -111,6 +112,7 @@ export function InputsDesk() {
           content: (
             <>
               <MarksHeader />
+              <ComponentBookCard />
               {rules}
             </>
           ),

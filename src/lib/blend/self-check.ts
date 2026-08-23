@@ -1,6 +1,13 @@
 import { applyMarksAndBook } from "../marks/apply";
+import { rowsFromComponentBookRecords } from "../marks/airtable";
+import { compareSettlementDays } from "../marks/compare";
 import { emptyComponentBook } from "../marks/component-book";
-import { emptyDailyMarks, marksFromPlattsFields, SAMPLE_PLATTS_FIELDS_21_AUG_2026 } from "../marks/convert";
+import {
+  emptyDailyMarks,
+  marksFromPlattsFields,
+  SAMPLE_PLATTS_FIELDS_20_AUG_2026,
+  SAMPLE_PLATTS_FIELDS_21_AUG_2026,
+} from "../marks/convert";
 import { liftDecision } from "../marks/lift";
 import { createDefaultPlant, defaultHeel, refreshTankSpecs } from "./defaults";
 import { impliedComponentValue, seekNaphtha, seekRegion } from "./goalseek";
@@ -419,6 +426,83 @@ function checkBasisChangesRecipe() {
   assert(alkCheap > alkDear + 10, `changing alk basis must change the recipe (cheap ${alkCheap}, dear ${alkDear})`);
 }
 
+function checkComponentBookAirtableRows() {
+  const rows = rowsFromComponentBookRecords([
+    { fields: { streamKey: "alkylate", name: "alkylate", basisCpg: -12.5, overridePerBbl: "", notes: "GC" } },
+    { fields: { streamKey: "ALKYLATE", basisCpg: 40 } },
+    { fields: { streamKey: "fcc", basisCpg: "", overridePerBbl: "" } },
+    { fields: { streamKey: "mystery-alk", basisCpg: 10 } },
+  ]);
+  const alk = rows.find((row) => row.streamKey === "alkylate")!;
+  const fcc = rows.find((row) => row.streamKey === "fcc")!;
+  assert(alk.basisCpg === -12.5 && alk.overridePerBbl === null, "alk maps basis only");
+  assert(alk.source === "airtable", "priced Airtable row is airtable");
+  assert(fcc.basisCpg === null && fcc.overridePerBbl === null, "empty fcc stays empty");
+  assert(fcc.source === "stale", "empty Airtable fcc is stale, not a typical spread");
+  assert(rows.every((row) => row.streamKey !== ("mystery-alk" as typeof row.streamKey)), "unknown streamKey ignored");
+}
+
+function checkEmptyBookDoesNotInventAlk() {
+  const today = marksFromPlattsFields(SAMPLE_PLATTS_FIELDS_21_AUG_2026);
+  const prior = marksFromPlattsFields(SAMPLE_PLATTS_FIELDS_20_AUG_2026);
+  const base = isolateP1(createDefaultPlant());
+  const lastAlk = base.components.find((component) => component.id === "colonial-alkylate")!.costPerBbl;
+  const todayPlant = applyMarksAndBook({ ...base, marks: today, componentBook: emptyComponentBook() });
+  const priorPlant = applyMarksAndBook({ ...todayPlant, marks: prior });
+  const todayAlk = todayPlant.components.find((component) => component.id === "colonial-alkylate")!;
+  const priorAlk = priorPlant.components.find((component) => component.id === "colonial-alkylate")!;
+  assert(todayAlk.costPerBbl === lastAlk && priorAlk.costPerBbl === lastAlk, "empty book must not invent an alk Platts price");
+  assert(todayAlk.priceStale === true && priorAlk.priceStale === true, "empty book alk stays stale");
+  assert(todayPlant.tanks[0].rackPricePerBbl !== priorPlant.tanks[0].rackPricePerBbl, "rack can still move");
+}
+
+function checkFrozenRecipeDayOverDay() {
+  const today = marksFromPlattsFields(SAMPLE_PLATTS_FIELDS_21_AUG_2026);
+  const prior = marksFromPlattsFields(SAMPLE_PLATTS_FIELDS_20_AUG_2026);
+  const book = emptyComponentBook().map((row) =>
+    row.streamKey === "alkylate" ? { ...row, basisCpg: 0, source: "airtable" as const } : row,
+  );
+  const todayPlant = applyMarksAndBook({ ...isolateP1(createDefaultPlant()), marks: today, componentBook: book });
+  const solve = optimizePlant(todayPlant, { diagnose: false });
+  assert(solve.status === "optimal", solve.message);
+  const frozenAlkBbl = solve.componentUsedBbl["colonial-alkylate"] ?? 0;
+  const priorPlant = applyMarksAndBook({ ...todayPlant, marks: prior });
+  const todayAlk = todayPlant.components.find((component) => component.id === "colonial-alkylate")!.costPerBbl;
+  const priorAlk = priorPlant.components.find((component) => component.id === "colonial-alkylate")!.costPerBbl;
+  const cbobDelta = (today.gcCbobPerBbl ?? 0) - (prior.gcCbobPerBbl ?? 0);
+  assert(almost(todayAlk - priorAlk, cbobDelta), `alk must move with GC CBOB ${todayAlk - priorAlk} vs ${cbobDelta}`);
+  const compare = compareSettlementDays({
+    plant: todayPlant,
+    priorMarks: prior,
+    solve,
+    todayImplied: {},
+    priorImplied: {},
+  });
+  assert(compare.todayDate === "2026-08-21" && compare.priorDate === "2026-08-20", "compare labels both settlement dates");
+  assert(compare.bookStale === false, "basis-priced book is not stale");
+  assert(compare.stripLine === "bid moved with the strip", compare.stripLine);
+  assert(compare.deltaMargin !== null, "same barrels must produce a margin delta");
+  const emptyCompare = compareSettlementDays({
+    plant: applyMarksAndBook({ ...isolateP1(createDefaultPlant()), marks: today, componentBook: emptyComponentBook() }),
+    priorMarks: prior,
+    solve,
+    todayImplied: {},
+    priorImplied: {},
+  });
+  assert(emptyCompare.bookStale, "empty book is stale");
+  assert(emptyCompare.stripLine.includes("component book stale"), emptyCompare.stripLine);
+  assert((solve.componentUsedBbl["colonial-alkylate"] ?? 0) === frozenAlkBbl, "compare must not re-optimize the recipe");
+}
+
+function checkBookFetchFailIsLoud() {
+  const failed = {
+    ok: false as const,
+    reason: "airtable_error" as const,
+    message: "Component Book fetch failed. Airtable 403.",
+  };
+  assert(failed.message.includes("Component Book fetch failed"), "fail path must carry a message");
+}
+
 function checkLiftCall() {
   assert(liftDecision({ bookPerBbl: 100, impliedPerBbl: 99.8, epsilonPerBbl: 0.25, priceOrigin: "basis" }).call === "LIFT", "within epsilon");
   assert(liftDecision({ bookPerBbl: 100, impliedPerBbl: 99.7, epsilonPerBbl: 0.25, priceOrigin: "basis" }).call === "DON'T LIFT", "outside epsilon");
@@ -441,5 +525,9 @@ checkMarksUnits();
 checkMissingFieldLeavesLast();
 checkSampleMarksApplyToUsCbobOnly();
 checkBasisChangesRecipe();
+checkComponentBookAirtableRows();
+checkEmptyBookDoesNotInventAlk();
+checkFrozenRecipeDayOverDay();
+checkBookFetchFailIsLoud();
 checkLiftCall();
 console.log("blend engine checks passed");

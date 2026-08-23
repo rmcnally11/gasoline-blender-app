@@ -125,3 +125,14 @@ export const SAMPLE_PLATTS_FIELDS_21_AUG_2026: Record<string, unknown> = {
   Chi_Ethanol_cpg: 209.83,
   D6_RIN_cts: 209.25,
 };
+
+/** Prior settlement sample for day-over-day checks. Not a live weekend print. */
+export const SAMPLE_PLATTS_FIELDS_20_AUG_2026: Record<string, unknown> = {
+  Date: "2026-08-20",
+  NYMEX_RB_Implied: 300.0,
+  GC_CBOB_Diff: 0.5,
+  GC_Unl87_Diff: 22.5,
+  GC_CBOB93_Diff: 41.5,
+  Chi_Ethanol_cpg: 200.0,
+  D6_RIN_cts: 200.0,
+};

@@ -13,9 +13,10 @@ A **Gulf Coast component book**. Price naphtha and blendstocks in **$/gal** agai
 - **Infeasible** — binding constraints and the cheapest relax (1 bbl alk, 0.1 AKI, 1 ppm S, 0.01% benzene, 0.1 psi).
 - **Naphtha** — goal-seek uses the same LP implied value as the money screen. A debit card, if shown, is a heuristic — not the bid.
 - **Distillation** — D86 T50/T90/DI are volume-linear approximations. SFPP is not called certified CARBOB.
-- **Marks** — latest Platts Daily row (RB, GC CBOB / Unl87 / CBOB93, Chicago ethanol, D6 only). Empty fields stay last typed and show stale / missing. Dummy $104.16 rack / $0.85 RIN are never labeled as Platts.
-- **Inputs** — master book for every stream: use, inventory, must-use, market $/gal, basis vs GC CBOB, assay. Plant and the tanks read this page.
-- **Money screen** — after Solve, book vs LP implied and LIFT / DON'T LIFT.
+- **Marks** — latest Platts Daily row (RB, GC CBOB / Unl87 / CBOB93, Chicago ethanol, D6 only) and the previous Date row for the same-recipe compare. Empty fields stay last typed and show stale / missing. Dummy $104.16 rack / $0.85 RIN are never labeled as Platts. Weekend/holiday uses the last settlement — no fabricated Sunday print.
+- **Component Book** — Airtable table on the same base (`nbutane`, `fcc`, `reformate`, `alkylate`, `isomerate`, `lsr`, `heavy-naphtha`). Empty basis and empty override leave the stream stale. Override $/bbl wins; else book = GC CBOB $/bbl + basis cpg × 0.42. Fetch failure is shown — dummy assay prices are not treated as Platts.
+- **Inputs** — master book for every stream: use, inventory, must-use, market $/gal, basis vs GC CBOB, override, computed book, source (airtable / typed / stale). Plant and the tanks read this page.
+- **Money screen** — after Solve, book vs LP implied and LIFT / DON'T LIFT. Plant also shows last settlement vs prior on the frozen barrels.
 
 Defaults in `src/lib/blend/defaults.ts` are editable assays. They are not a price truth — type your book.
 
@@ -44,8 +45,11 @@ Set these in Vercel Project Settings → Environment Variables (and locally in `
 | `AIRTABLE_API_KEY` | yes | — |
 | `AIRTABLE_BASE_ID` | no | `appokfrHKXUhGXjVo` |
 | `AIRTABLE_PLATTS_TABLE_ID` | no | `tbl5y8ORe6aOumuJn` |
+| `AIRTABLE_COMPONENT_BOOK_TABLE_ID` | no | `tblSOLXJnXczeLJ07` |
 
-`AIRTABLE_TOKEN` is accepted as an alias for the API key. The app reads the latest row by Date and maps only `NYMEX_RB_Implied`, `GC_CBOB_Diff`, `GC_Unl87_Diff`, `GC_CBOB93_Diff`, `Chi_Ethanol_cpg`, and `D6_RIN_cts`. ULSD, jet, CARBOB, NYH, Denver, Tampa, curve, EIA, and HTML report fields are ignored.
+`AIRTABLE_TOKEN` is accepted as an alias for the API key. The app reads the latest Platts Daily row and the previous Date row, mapping only `NYMEX_RB_Implied`, `GC_CBOB_Diff`, `GC_Unl87_Diff`, `GC_CBOB93_Diff`, `Chi_Ethanol_cpg`, and `D6_RIN_cts`. ULSD, jet, CARBOB, NYH, Denver, Tampa, curve, EIA, and HTML report fields are ignored.
+
+Component Book fields mapped: `streamKey`, `name`, `basisCpg`, `overridePerBbl`, `notes`. Unknown `streamKey` values are ignored. Empty numbers stay empty.
 
 Without the key the header says **Marks missing**. Last typed placeholders stay on the page and are flagged stale.
 

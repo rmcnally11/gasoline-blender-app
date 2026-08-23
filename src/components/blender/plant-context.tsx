@@ -21,11 +21,18 @@ import {
   type SolverStatus,
   type TankId,
 } from "@/lib/blend";
-import { applyMarksAndBook, clearTypedForStream, defaultRackProduct, withTypedPrice } from "@/lib/marks/apply";
+import {
+  applyMarksAndBook,
+  clearTypedForBookStreams,
+  clearTypedForStream,
+  defaultRackProduct,
+  withTypedPrice,
+} from "@/lib/marks/apply";
+import { bookSourceOf, mergeComponentBook } from "@/lib/marks/component-book";
 import { emptyDailyMarks } from "@/lib/marks/convert";
 import { impliedValuesForUsed } from "@/lib/marks/implied";
 import { persistBook, loadStoredBook } from "@/lib/marks/storage";
-import type { ComponentBookRow, MarksFetchResult } from "@/lib/marks/types";
+import type { ComponentBookRow, MarksApiPayload } from "@/lib/marks/types";
 
 type SeekBook = Record<string, ComponentSeekResult>;
 
@@ -96,10 +103,27 @@ function emptySolve(): PlantSolve {
   };
 }
 
-function marksLabel(result: MarksFetchResult): string {
-  if (result.ok && result.marks.date) return `Marks as of ${result.marks.date} applied.`;
-  if (result.ok) return "Platts Daily row applied. Some fields are stale / missing.";
-  return result.message;
+function marksLabel(result: MarksApiPayload): string {
+  const marksBit = result.ok
+    ? result.marks.date
+      ? `Marks as of ${result.marks.date} applied.`
+      : "Platts Daily row applied. Some fields are stale / missing."
+    : result.message;
+  if (!result.book?.ok) {
+    return `${marksBit} Component Book fetch failed — ${result.book?.message ?? "no book payload."}`;
+  }
+  return marksBit;
+}
+
+function payloadFromFetchError(error: unknown): MarksApiPayload {
+  const message = error instanceof Error ? error.message : "Marks fetch failed.";
+  return {
+    ok: false,
+    reason: "airtable_error",
+    message,
+    priorMarks: null,
+    book: { ok: false, reason: "airtable_error", message: `Component Book fetch failed. ${message}` },
+  };
 }
 
 export function PlantProvider({ children }: { children: React.ReactNode }) {
@@ -115,9 +139,11 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
 
   const plantRef = useRef(plant);
   const regionRef = useRef(activeRegion);
+  const solveRef = useRef(solve);
   const solveGen = useRef(0);
   plantRef.current = plant;
   regionRef.current = activeRegion;
+  solveRef.current = solve;
 
   const seeks = seekBooks[activeRegion] ?? {};
 
@@ -169,49 +195,101 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
     }, 20);
   }, []);
 
-  const applyFetchedMarks = useCallback(
-    (current: Plant, result: MarksFetchResult): Plant => {
-      if (result.ok) {
-        return applyMarksAndBook({
-          ...current,
-          marks: result.marks,
-          marksLoadState: "ok",
-          marksLoadError: null,
-        });
+  const repriceFrozen = useCallback((next: Plant, label: string) => {
+    setPlant(next);
+    plantRef.current = next;
+    setLastAction(label);
+    const frozen = solveRef.current;
+    if (frozen.status !== "optimal") return;
+    const gen = ++solveGen.current;
+    window.setTimeout(() => {
+      if (gen !== solveGen.current) return;
+      const implied = impliedValuesForUsed(next, frozen.componentUsedBbl);
+      if (gen !== solveGen.current) return;
+      setSolve((prev) => ({ ...prev, impliedValues: implied }));
+    }, 0);
+  }, []);
+
+  const applyPrices = useCallback(
+    (next: Plant, label: string) => {
+      if (solveRef.current.status === "optimal") {
+        repriceFrozen(next, label);
+        return;
       }
-      return applyMarksAndBook({
-        ...current,
+      applySolve(next, label);
+    },
+    [applySolve, repriceFrozen],
+  );
+
+  const applyFetchedMarks = useCallback((current: Plant, result: MarksApiPayload): Plant => {
+    let next: Plant = {
+      ...current,
+      priorMarks: result.priorMarks ?? null,
+    };
+
+    if (result.ok) {
+      next = {
+        ...next,
+        marks: result.marks,
+        marksLoadState: "ok",
+        marksLoadError: null,
+      };
+    } else {
+      next = {
+        ...next,
         marks: emptyDailyMarks(),
         marksLoadState: result.reason === "missing_token" ? "missing_token" : "error",
         marksLoadError: result.message,
-      });
-    },
-    [],
-  );
+      };
+    }
+
+    const book = result.book ?? {
+      ok: false as const,
+      reason: "airtable_error" as const,
+      message: "Component Book was not returned. Dummy assay prices are not the Airtable book.",
+    };
+
+    if (book.ok) {
+      const componentBook = mergeComponentBook(book.rows);
+      persistBook(componentBook, current.liftEpsilonPerBbl);
+      next = {
+        ...next,
+        componentBook,
+        components: clearTypedForBookStreams(next.components),
+        bookLoadState: "ok",
+        bookLoadError: null,
+      };
+    } else {
+      next = {
+        ...next,
+        bookLoadState: book.reason === "missing_token" ? "missing_token" : "error",
+        bookLoadError: book.message,
+      };
+    }
+
+    return applyMarksAndBook(next);
+  }, []);
 
   const refreshMarks = useCallback(() => {
     setBusy("marks");
     setPlant((current) => {
-      const next = { ...current, marksLoadState: "loading" as const };
+      const next = { ...current, marksLoadState: "loading" as const, bookLoadState: "loading" as const };
       plantRef.current = next;
       return next;
     });
     void fetch("/api/marks")
-      .then(async (response) => (await response.json()) as MarksFetchResult)
+      .then(async (response) => (await response.json()) as MarksApiPayload)
       .then((result) => {
         const next = applyFetchedMarks(plantRef.current, result);
-        applySolve(next, marksLabel(result));
+        applyPrices(next, marksLabel(result));
       })
       .catch((error: unknown) => {
-        const next = applyFetchedMarks(plantRef.current, {
-          ok: false,
-          reason: "airtable_error",
-          message: error instanceof Error ? error.message : "Marks fetch failed.",
-        });
-        applySolve(next, next.marksLoadError ?? "Marks missing.");
+        const payload = payloadFromFetchError(error);
+        const next = applyFetchedMarks(plantRef.current, payload);
+        applyPrices(next, marksLabel(payload));
       })
       .finally(() => setBusy(null));
-  }, [applyFetchedMarks, applySolve]);
+  }, [applyFetchedMarks, applyPrices]);
 
   useEffect(() => {
     const stored = loadStoredBook();
@@ -234,8 +312,11 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       componentBook: current.componentBook,
       liftEpsilonPerBbl: current.liftEpsilonPerBbl,
       marks: current.marks,
+      priorMarks: current.priorMarks,
       marksLoadState: current.marksLoadState,
       marksLoadError: current.marksLoadError,
+      bookLoadState: current.bookLoadState,
+      bookLoadError: current.bookLoadError,
     });
     applySolve(next, "Plant reset. Marks and component book kept.");
     setSeekBooks({});
@@ -335,9 +416,14 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
   const updateComponentBook = useCallback(
     (streamKey: ComponentBookRow["streamKey"], patch: Partial<ComponentBookRow>) => {
       const current = plantRef.current;
-      const componentBook = current.componentBook.map((row) =>
-        row.streamKey === streamKey ? { ...row, ...patch } : row,
-      );
+      const componentBook = current.componentBook.map((row) => {
+        if (row.streamKey !== streamKey) return row;
+        const merged = { ...row, ...patch };
+        if (patch.basisCpg !== undefined || patch.overridePerBbl !== undefined) {
+          merged.source = bookSourceOf({ ...merged, source: "typed" });
+        }
+        return merged;
+      });
       persistBook(componentBook, current.liftEpsilonPerBbl);
       const priceTouched = patch.basisCpg !== undefined || patch.overridePerBbl !== undefined;
       if (!priceTouched) {
@@ -348,9 +434,9 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       }
       const components = clearTypedForStream(current.components, streamKey);
       const next = applyMarksAndBook({ ...current, componentBook, components });
-      applySolve(next, `${streamKey} book updated and re-solved.`);
+      applyPrices(next, `${streamKey} book updated on the frozen recipe.`);
     },
-    [applySolve],
+    [applyPrices],
   );
 
   const updateLiftEpsilon = useCallback((value: number) => {

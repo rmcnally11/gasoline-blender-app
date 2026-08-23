@@ -579,9 +579,12 @@ export function createDefaultPlant(): Plant {
       makeTank("P3", "P3", "regular", "cpl-cbob", 2500, 1100, complianceOverlay),
     ],
     marks: emptyDailyMarks(),
+    priorMarks: null,
     marksLoadState: "idle",
     marksLoadError: null,
     componentBook: emptyComponentBook(),
+    bookLoadState: "idle",
+    bookLoadError: null,
     liftEpsilonPerBbl: 0.25,
   };
 }

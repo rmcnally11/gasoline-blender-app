@@ -17,9 +17,18 @@ export function ComponentBookCard() {
       <CardHeader className="border-b">
         <CardTitle>Component book vs GC CBOB</CardTitle>
         <CardDescription>
-          Platts Daily does not publish alkylate, FCC, reformate, nC4, isomerate, or naphtha. Type
-          the basis in cents per gallon versus GC CBOB. Book price is GC CBOB $/bbl + basis × 0.42
-          unless you set an absolute $/bbl override. Empty is not a typical spread.
+          Type basis and overrides in{" "}
+          <a
+            href="https://airtable.com/appokfrHKXUhGXjVo/tblSOLXJnXczeLJ07"
+            className="text-sky-800 underline underline-offset-2"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Airtable Component Book
+          </a>
+          , then Refresh. Platts Daily does not publish these streams — empty basis is stale, not a
+          typical alk/FCC spread. Override $/bbl wins; else book = GC CBOB $/bbl + basis cpg × 0.42.
+          Local edits are labeled typed until the next Airtable pull.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -37,11 +46,22 @@ export function ComponentBookCard() {
           </p>
         </label>
 
-        <div className="hidden grid-cols-[minmax(0,1.1fr)_5.5rem_5.75rem_minmax(0,1fr)_minmax(0,1fr)] gap-2 px-1 text-[10px] tracking-wide text-muted-foreground uppercase md:grid">
+        {plant.bookLoadState === "error" || plant.bookLoadState === "missing_token" ? (
+          <p className="text-xs text-rose-700">
+            {plant.bookLoadError ??
+              "Component Book fetch failed. Streams are not dummy Platts alk/FCC defaults."}
+          </p>
+        ) : null}
+        {plant.bookLoadState === "loading" ? (
+          <p className="text-xs text-muted-foreground">Pulling Component Book from Airtable…</p>
+        ) : null}
+
+        <div className="hidden grid-cols-[minmax(0,1.1fr)_5.5rem_5.75rem_minmax(0,1fr)_4.25rem_minmax(0,1fr)] gap-2 px-1 text-[10px] tracking-wide text-muted-foreground uppercase md:grid">
           <span>Stream</span>
           <span className="text-right">Basis cpg</span>
           <span className="text-right">Override $/bbl</span>
-          <span>Book</span>
+          <span>Book $/bbl</span>
+          <span>Source</span>
           <span>Notes</span>
         </div>
         {plant.componentBook.map((row) => {
@@ -49,7 +69,7 @@ export function ComponentBookCard() {
           return (
             <div
               key={row.streamKey}
-              className="grid grid-cols-2 items-end gap-2 rounded-lg border border-border/80 px-2.5 py-2 md:grid-cols-[minmax(0,1.1fr)_5.5rem_5.75rem_minmax(0,1fr)_minmax(0,1fr)]"
+              className="grid grid-cols-2 items-end gap-2 rounded-lg border border-border/80 px-2.5 py-2 md:grid-cols-[minmax(0,1.1fr)_5.5rem_5.75rem_minmax(0,1fr)_4.25rem_minmax(0,1fr)]"
             >
               <div className="col-span-2 min-w-0 md:col-span-1">
                 <p className="font-medium">{row.name}</p>
@@ -76,20 +96,26 @@ export function ComponentBookCard() {
                 />
               </label>
               <div className="text-xs">
-                <p className="mb-1 text-[10px] text-muted-foreground md:hidden">Book</p>
+                <p className="mb-1 text-[10px] text-muted-foreground md:hidden">Book $/bbl</p>
                 {priced.price === null ? (
                   <p className="text-rose-700">
                     stale / missing
-                    {gcCbob === null ? " — no GC CBOB" : " — type a basis"}
+                    {gcCbob === null ? " — no GC CBOB" : " — empty Airtable basis"}
                   </p>
                 ) : (
                   <p className="font-mono tabular-nums">
                     {formatMoney(priced.price, 3)}/bbl
                     <span className="ml-1 text-muted-foreground">
-                      ({formatMoney(perGalFromBbl(priced.price), 4)}/gal · {priced.origin})
+                      ({formatMoney(perGalFromBbl(priced.price), 4)}/gal)
                     </span>
                   </p>
                 )}
+              </div>
+              <div className="text-xs">
+                <p className="mb-1 text-[10px] text-muted-foreground md:hidden">Source</p>
+                <p className={row.source === "stale" ? "text-rose-700" : "text-muted-foreground"}>
+                  {row.source}
+                </p>
               </div>
               <label className="col-span-2 md:col-span-1">
                 <Label className="text-[10px] text-muted-foreground md:sr-only">Notes</Label>

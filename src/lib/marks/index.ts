@@ -1,4 +1,5 @@
 export * from "./apply";
+export * from "./compare";
 export * from "./component-book";
 export * from "./convert";
 export * from "./implied";
