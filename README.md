@@ -29,7 +29,7 @@ npm run dev
 
 Open [http://127.0.0.1:43180](http://127.0.0.1:43180).
 
-Type the component book on **Inputs**. Plant is P&L / bids. P1 / P2 / P3 are the ticket and the spec. On a phone those rooms are tabs; from 768px up the desk is one page.
+Type the component book on **Inputs**. Switch Colonial / Explorer / SFPP / Mexico with tabs — one region on screen, not a long scroll. Plant is P&L / bids. P1 / P2 / P3 are the ticket and the spec.
 
 Production is the existing Vercel project `gasoline_blender_2.0`:
 [https://gasolineblender20-bobby-204e.vercel.app](https://gasolineblender20-bobby-204e.vercel.app).

@@ -11,7 +11,7 @@ import { NumberField } from "./number-field";
 import { usePlant } from "./plant-context";
 
 export function InputsDesk() {
-  const { plant, updateRvo, setOverlay, updateLiftEpsilon } = usePlant();
+  const { plant, activeRegion, updateRvo, setOverlay, updateLiftEpsilon } = usePlant();
 
   const rules = (
     <Card size="sm">
@@ -101,15 +101,9 @@ export function InputsDesk() {
 
   return (
     <MobileWorkspace
+      forceTabs
       storageKey="inputs"
-      defaultSection="rules"
-      desktop={
-        <>
-          <MarksHeader />
-          {rules}
-          <ComponentInputs />
-        </>
-      }
+      defaultSection={activeRegion}
       sections={[
         {
           id: "rules",

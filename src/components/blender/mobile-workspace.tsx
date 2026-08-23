@@ -58,11 +58,13 @@ export function MobileWorkspace({
   defaultSection,
   sections,
   desktop,
+  forceTabs = false,
 }: {
   storageKey: string;
   defaultSection: string;
   sections: MobileSection[];
   desktop?: ReactNode;
+  forceTabs?: boolean;
 }) {
   const { setTabs } = useContext(TabsContext);
   const isDesktop = useIsDesktop();
@@ -115,13 +117,13 @@ export function MobileWorkspace({
   );
 
   useLayoutEffect(() => {
-    if (isDesktop === false) {
+    if (!forceTabs && isDesktop === false) {
       setTabs(tabBar);
       return () => setTabs(null);
     }
     setTabs(null);
     return () => setTabs(null);
-  }, [isDesktop, active, sectionIds, setTabs]);
+  }, [forceTabs, isDesktop, active, sectionIds, setTabs]);
 
   const desktopTree = (
     <div className="space-y-4">
@@ -138,6 +140,16 @@ export function MobileWorkspace({
     <div className="space-y-4">{sections.find((section) => section.id === active)?.content}</div>
   );
 
+  const tabbed = (
+    <>
+      <div className="sticky top-[calc(env(safe-area-inset-top)+3.15rem)] z-20 -mx-4 mb-3 border-b border-border/80 bg-background/95 px-3 py-1.5 backdrop-blur md:static md:mx-0 md:rounded-xl md:border">
+        {tabBar}
+      </div>
+      {mobileTree}
+    </>
+  );
+
+  if (forceTabs) return tabbed;
   if (isDesktop === true) return desktopTree;
   if (isDesktop === false) return mobileTree;
 

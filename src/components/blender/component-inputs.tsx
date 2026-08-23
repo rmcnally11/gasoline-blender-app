@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -21,8 +22,12 @@ import { OptionalNumberField } from "./optional-number-field";
 import { usePlant } from "./plant-context";
 
 export function ComponentInputs({ regionId }: { regionId?: RegionId }) {
-  const { plant, solve, updateComponent, updateComponentBook, setEditingId } = usePlant();
+  const { plant, solve, updateComponent, updateComponentBook, setEditingId, setActiveRegion } = usePlant();
   const gcCbob = plant.marks.gcCbobPerBbl;
+
+  useEffect(() => {
+    if (regionId) setActiveRegion(regionId);
+  }, [regionId, setActiveRegion]);
   const regions = regionId
     ? REGION_OPTIONS.filter((region) => region.id === regionId)
     : REGION_OPTIONS;
