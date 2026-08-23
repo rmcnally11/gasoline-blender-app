@@ -247,7 +247,7 @@ function Metric({
   finishedBbl: number;
   tone?: "muted" | "good" | "bad";
 }) {
-  const toneClass = tone === "good" ? "text-emerald-800" : tone === "bad" ? "text-red-700" : "text-muted-foreground";
+  const toneClass = tone === "good" ? "text-teal-800" : tone === "bad" ? "text-red-700" : "text-muted-foreground";
   return (
     <div className="rounded-lg bg-muted/40 px-2.5 py-2">
       <dt className="text-[10px] tracking-wide text-muted-foreground uppercase">{label}</dt>
@@ -279,7 +279,7 @@ function LiftTable({ lines }: { lines: MoneyLine[] }) {
               </p>
             </div>
             {line.call === "LIFT" ? (
-              <Badge className="bg-emerald-500/15 text-emerald-800">LIFT</Badge>
+              <Badge className="bg-teal-500/15 text-teal-800">LIFT</Badge>
             ) : (
               <Badge variant="destructive">DON&apos;T LIFT</Badge>
             )}
@@ -343,7 +343,7 @@ function LiftTable({ lines }: { lines: MoneyLine[] }) {
               </td>
               <td className="py-1.5">
                 {line.call === "LIFT" ? (
-                  <Badge className="bg-emerald-500/15 text-emerald-800">LIFT</Badge>
+                  <Badge className="bg-teal-500/15 text-teal-800">LIFT</Badge>
                 ) : (
                   <Badge variant="destructive">DON&apos;T LIFT</Badge>
                 )}

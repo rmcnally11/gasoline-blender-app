@@ -7,7 +7,7 @@ import { usePlant } from "./plant-context";
 
 function Stale({ show }: { show: boolean }) {
   if (!show) return null;
-  return <span className="ml-1 text-[10px] font-medium tracking-wide text-amber-800 uppercase">stale / missing</span>;
+  return <span className="ml-1 text-[10px] font-medium tracking-wide text-rose-700 uppercase">stale / missing</span>;
 }
 
 export function MarksHeader() {
@@ -20,33 +20,31 @@ export function MarksHeader() {
     !marks.date;
 
   return (
-    <section className="rounded-xl border border-border bg-card/80 px-3 py-2">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <p className="text-[11px] font-medium tracking-[0.14em] text-amber-800 uppercase">
-            {missing ? "Marks missing" : `Marks as of ${marks.date}`}
-          </p>
-          {missing ? (
-            <p className="mt-1 max-w-3xl text-xs text-muted-foreground">
-              {plant.marksLoadError ??
-                "No Platts Daily row. Last typed rack / ethanol / D6 stay on the page and are flagged stale — they are not the dummy $104.16 rack or $0.85 RIN from defaults."}
-            </p>
-          ) : (
-            <p className="mt-1 text-xs text-muted-foreground">
-              Platts Daily, latest row. Cents/gal × 0.42 = $/bbl. D6 is cts/RIN → $/RIN for RVO.
-            </p>
-          )}
-        </div>
+    <section className="rounded-xl border border-border bg-card px-3 py-2">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[11px] font-medium tracking-[0.14em] text-sky-800 uppercase">
+          {missing ? "Marks missing" : `Marks as of ${marks.date}`}
+        </p>
         <ActionButton
-          className="w-full md:w-auto"
+          className="h-9 shrink-0 md:h-8"
           variant="outline"
           onClick={refreshMarks}
           busy={busy === "marks"}
           disabled={busy !== null}
         >
-          {busy === "marks" ? "Pulling marks…" : "Refresh marks"}
+          {busy === "marks" ? "Pulling…" : "Refresh"}
         </ActionButton>
       </div>
+      {missing ? (
+        <p className="mt-1 hidden max-w-3xl text-xs text-muted-foreground md:block">
+          {plant.marksLoadError ??
+            "No Platts Daily row. Last typed rack / ethanol / D6 stay on the page and are flagged stale — they are not the dummy $104.16 rack or $0.85 RIN from defaults."}
+        </p>
+      ) : (
+        <p className="mt-1 hidden text-xs text-muted-foreground md:block">
+          Platts Daily, latest row. Cents/gal × 0.42 = $/bbl. D6 is cts/RIN → $/RIN for RVO.
+        </p>
+      )}
       <dl className="mt-2 grid grid-cols-2 gap-2 text-xs md:grid-cols-4">
         <Mark
           label="NYMEX RB"
@@ -97,7 +95,7 @@ function Mark({
   stale: boolean;
 }) {
   return (
-    <div className="rounded-lg bg-muted/40 px-2.5 py-2">
+    <div className="rounded-lg bg-sky-50 px-2.5 py-2">
       <dt className="text-[10px] tracking-wide text-muted-foreground uppercase">
         {label}
         <Stale show={stale} />

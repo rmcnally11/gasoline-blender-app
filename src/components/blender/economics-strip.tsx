@@ -78,7 +78,7 @@ function Metric({
 }) {
   const hintClass = {
     muted: "text-muted-foreground",
-    good: "text-emerald-800",
+    good: "text-teal-800",
     bad: "text-red-700",
   }[tone];
   return (

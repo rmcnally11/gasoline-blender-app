@@ -88,7 +88,7 @@ export function SpecSheet({
                 <dt className="text-[10px] tracking-wide text-muted-foreground uppercase">Finished</dt>
                 <dd
                   className={`font-mono tabular-nums ${
-                    overlayOn && (check.id === "sulfur" || check.id === "benzene") ? "text-amber-800" : ""
+                    overlayOn && (check.id === "sulfur" || check.id === "benzene") ? "text-rose-700" : ""
                   }`}
                 >
                   {limitText(check.finishedLimit, digits)}
@@ -154,7 +154,7 @@ export function SpecSheet({
                   {limitText(check.pipeLimit, digits)}
                 </td>
                 <td className="py-1.5 text-right font-mono text-xs tabular-nums">
-                  <span className={overlayOn && (check.id === "sulfur" || check.id === "benzene") ? "text-amber-800" : "text-muted-foreground"}>
+                  <span className={overlayOn && (check.id === "sulfur" || check.id === "benzene") ? "text-rose-700" : "text-muted-foreground"}>
                     {limitText(check.finishedLimit, digits)}
                   </span>
                 </td>
@@ -197,6 +197,6 @@ function SpecBadge({ check }: { check: SpecCheck }) {
   if (check.status === "idle") return <Badge variant="outline">Waiting</Badge>;
   if (check.status === "fail") return <Badge variant="destructive">Off spec</Badge>;
   if (check.status === "batch") return <Badge variant="outline">Clean batch</Badge>;
-  if (check.binding) return <Badge className="bg-amber-500/15 text-amber-800">Binding</Badge>;
-  return <Badge className="bg-emerald-500/15 text-emerald-800">On spec</Badge>;
+  if (check.binding) return <Badge className="bg-rose-500/15 text-rose-800">Binding</Badge>;
+  return <Badge className="bg-teal-500/15 text-teal-800">On spec</Badge>;
 }

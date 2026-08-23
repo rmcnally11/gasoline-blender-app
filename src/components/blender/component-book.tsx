@@ -78,7 +78,7 @@ export function ComponentBookCard() {
               <div className="text-xs">
                 <p className="mb-1 text-[10px] text-muted-foreground md:hidden">Book</p>
                 {priced.price === null ? (
-                  <p className="text-amber-800">
+                  <p className="text-rose-700">
                     stale / missing
                     {gcCbob === null ? " — no GC CBOB" : " — type a basis"}
                   </p>
@@ -104,7 +104,7 @@ export function ComponentBookCard() {
           );
         })}
         {gcCbob === null ? (
-          <p className="text-xs text-amber-800">
+          <p className="text-xs text-rose-700">
             GC CBOB is stale / missing. Basis will not price a stream until Platts Daily has RB and
             GC_CBOB_Diff. Last typed component prices stay put.
           </p>

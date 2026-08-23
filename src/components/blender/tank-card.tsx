@@ -68,10 +68,10 @@ export function TankCard({
               <Badge variant="outline">Clean batch</Badge>
             ) : null}
             {failed.length === 0 && !cleanBatch && binding.length > 0 ? (
-              <Badge className="bg-amber-500/15 text-amber-800">Binding</Badge>
+              <Badge className="bg-rose-500/15 text-rose-800">Binding</Badge>
             ) : null}
             {failed.length === 0 && !cleanBatch && tankSolve?.properties && binding.length === 0 ? (
-              <Badge className="bg-emerald-500/15 text-emerald-800">On spec</Badge>
+              <Badge className="bg-teal-500/15 text-teal-800">On spec</Badge>
             ) : null}
             <Switch checked={tank.enabled} onCheckedChange={(checked) => onChange({ enabled: checked })} aria-label={`Enable ${tank.id}`} />
           </div>
@@ -122,7 +122,7 @@ export function TankCard({
           <label className="space-y-1">
             <Label className="text-xs text-muted-foreground">
               Destination marker, $/gal
-              {tank.rackStale ? <span className="ml-1 text-amber-800">stale / missing</span> : null}
+              {tank.rackStale ? <span className="ml-1 text-rose-700">stale / missing</span> : null}
             </Label>
             <NumberField
               value={tank.rackPricePerBbl / 42}

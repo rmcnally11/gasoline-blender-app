@@ -68,7 +68,7 @@ export function PlantDesk() {
           <Label className="text-xs text-muted-foreground">
             D6 RIN, $/RIN
             {plant.rvo.d6Stale || plant.marks.d6Stale ? (
-              <span className="ml-1 text-amber-800">stale / missing</span>
+              <span className="ml-1 text-rose-700">stale / missing</span>
             ) : null}
           </Label>
           <NumberField

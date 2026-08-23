@@ -111,7 +111,7 @@ export function MarketValues({
                   ) : seek == null ? (
                     <Badge variant="outline">Seek</Badge>
                   ) : clears ? (
-                    <Badge className="bg-emerald-500/15 text-emerald-800">Buy</Badge>
+                    <Badge className="bg-teal-500/15 text-teal-800">Buy</Badge>
                   ) : (
                     <Badge variant="destructive">Pass</Badge>
                   )}
