@@ -7,7 +7,7 @@ export default function P2Page() {
   return (
     <AppShell
       title="P2"
-      subtitle="Explorer destination by default. Marker and freight are $/gal. Switching the slate moves this lift onto another market’s barrels."
+      subtitle="Explorer lift. Pipe CBOB receipt unless you turn the finished overlay on. Heel is in the mix."
     >
       <TankPage tankId="P2" />
     </AppShell>

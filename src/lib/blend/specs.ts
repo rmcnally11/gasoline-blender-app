@@ -1,9 +1,9 @@
-import type { EthanolMode, GradeId, ProductSpecs, SeasonId, SlateId } from "./types";
+import type { EthanolMode, GradeId, ProductSpecs, ProductTank, SeasonId, SlateId } from "./types";
 
 export const SLATE_OPTIONS: { id: SlateId; label: string; region: string }[] = [
   { id: "cpl-cbob", label: "CPL CBOB", region: "Colonial" },
   { id: "explorer-cbob", label: "Explorer CBOB", region: "Explorer" },
-  { id: "sfpp-carbob", label: "SFPP CARBOB", region: "West Coast" },
+  { id: "sfpp-carbob", label: "SFPP West Coast BOB", region: "West Coast" },
   { id: "mexico-zmvm", label: "Mexico ZMVM", region: "Mexico" },
   { id: "mexico-resto", label: "Mexico resto", region: "Mexico" },
 ];
@@ -29,6 +29,14 @@ export const ETHANOL_OPTIONS: { id: EthanolMode; label: string }[] = [
 ];
 
 const GALLONS_PER_BBL = 42;
+
+export function isUsCbob(slateId: SlateId): boolean {
+  return slateId === "cpl-cbob" || slateId === "explorer-cbob";
+}
+
+export function isExportSlate(slateId: SlateId): boolean {
+  return slateId === "mexico-zmvm" || slateId === "mexico-resto";
+}
 
 export function rackPricePerBbl(gradeId: GradeId, slateId: SlateId): number {
   const grade = GRADE_OPTIONS.find((item) => item.id === gradeId) ?? GRADE_OPTIONS[0];
@@ -73,7 +81,8 @@ function distillationForSeason(seasonId: SeasonId): Pick<
   }
 }
 
-function seasonalRvp(slateId: SlateId, seasonId: SeasonId): number {
+/** Published RVP class. No 8.8 hack on Colonial 7.8. */
+export function rvpClassPsi(slateId: SlateId, seasonId: SeasonId): number {
   if (slateId === "sfpp-carbob") {
     if (seasonId.startsWith("winter")) return 11.5;
     if (seasonId === "summer78") return 6.4;
@@ -85,9 +94,40 @@ function seasonalRvp(slateId: SlateId, seasonId: SeasonId): number {
   if (slateId === "mexico-resto") {
     return seasonId.startsWith("winter") ? 13.5 : 9.0;
   }
-  if (slateId === "cpl-cbob" && seasonId === "summer90") return 9.0;
-  if (slateId === "cpl-cbob" && seasonId === "summer78") return 8.8;
   return (SEASON_OPTIONS.find((item) => item.id === seasonId) ?? SEASON_OPTIONS[1]).rvpMaxPsi;
+}
+
+export function rvpClassLabel(slateId: SlateId, seasonId: SeasonId): string {
+  const psi = rvpClassPsi(slateId, seasonId);
+  const season = SEASON_OPTIONS.find((item) => item.id === seasonId);
+  return `${season?.label ?? seasonId} · class ${psi.toFixed(1)} psi`;
+}
+
+/** 1-psi waiver is legal only for E10 in a true 9.0 class. */
+export function waiverEligible(slateId: SlateId, seasonId: SeasonId, ethanolMode: EthanolMode): boolean {
+  return ethanolMode === "e10" && rvpClassPsi(slateId, seasonId) === 9.0;
+}
+
+export function defaultRvpWaiver(slateId: SlateId, seasonId: SeasonId, ethanolMode: EthanolMode): boolean {
+  return waiverEligible(slateId, seasonId, ethanolMode);
+}
+
+export function waiverApplies(slateId: SlateId, seasonId: SeasonId, ethanolMode: EthanolMode, requested: boolean): boolean {
+  return requested && waiverEligible(slateId, seasonId, ethanolMode);
+}
+
+export function pipeRvpLimit(slateId: SlateId, seasonId: SeasonId): number {
+  return rvpClassPsi(slateId, seasonId);
+}
+
+export function finishedRvpLimit(
+  slateId: SlateId,
+  seasonId: SeasonId,
+  ethanolMode: EthanolMode,
+  waiverRequested: boolean,
+): number {
+  const klass = rvpClassPsi(slateId, seasonId);
+  return klass + (waiverApplies(slateId, seasonId, ethanolMode, waiverRequested) ? 1 : 0);
 }
 
 function octaneFor(slateId: SlateId, gradeId: GradeId): { akiMin: number; ronMin: number | null; monMin: number | null } {
@@ -108,21 +148,22 @@ export function defaultEthanolMode(slateId: SlateId): EthanolMode {
   return "e10";
 }
 
-export function buildSpecs(
+function baseQuality(
   slateId: SlateId,
   gradeId: GradeId,
   seasonId: SeasonId,
-  ethanolMode: EthanolMode,
-  complianceOverlay: boolean,
-): ProductSpecs {
+): Omit<ProductSpecs, "rvpMaxPsi" | "sulfurMaxPpm" | "benzeneMaxVolPct" | "oxygenMinWtPct" | "oxygenMaxWtPct"> & {
+  sulfurMaxPpm: number;
+  benzeneMaxVolPct: number;
+  oxygenMinWtPct: number | null;
+  oxygenMaxWtPct: number;
+} {
   const octane = octaneFor(slateId, gradeId);
   const dist = distillationForSeason(seasonId);
-  const rvpMaxPsi = seasonalRvp(slateId, seasonId);
 
   if (slateId === "sfpp-carbob") {
     return {
       ...octane,
-      rvpMaxPsi,
       sulfurMaxPpm: 20,
       benzeneMaxVolPct: 0.8,
       aromaticsMaxVolPct: 35,
@@ -142,7 +183,6 @@ export function buildSpecs(
   if (slateId === "mexico-zmvm") {
     return {
       ...octane,
-      rvpMaxPsi,
       sulfurMaxPpm: 30,
       benzeneMaxVolPct: 1.0,
       aromaticsMaxVolPct: 25,
@@ -156,7 +196,6 @@ export function buildSpecs(
   if (slateId === "mexico-resto") {
     return {
       ...octane,
-      rvpMaxPsi,
       sulfurMaxPpm: 30,
       benzeneMaxVolPct: 2.0,
       aromaticsMaxVolPct: 32,
@@ -167,37 +206,114 @@ export function buildSpecs(
     };
   }
 
-  const pipelineSulfur = 80;
-  const pipelineBenzene = 3.8;
   return {
     ...octane,
-    rvpMaxPsi,
-    sulfurMaxPpm: complianceOverlay ? 10 : pipelineSulfur,
-    benzeneMaxVolPct: complianceOverlay ? 0.62 : pipelineBenzene,
+    sulfurMaxPpm: 80,
+    benzeneMaxVolPct: 3.8,
     aromaticsMaxVolPct: 35,
     olefinsMaxVolPct: 18,
-    oxygenMinWtPct: ethanolMode === "e10" ? 3.5 : null,
+    oxygenMinWtPct: null,
     oxygenMaxWtPct: 3.9,
     ...dist,
   };
 }
 
+/** What Colonial / Explorer / SFPP / Mexico will take. Overlay never touches this. */
+export function buildPipeSpecs(slateId: SlateId, gradeId: GradeId, seasonId: SeasonId): ProductSpecs {
+  const base = baseQuality(slateId, gradeId, seasonId);
+  return {
+    ...base,
+    rvpMaxPsi: pipeRvpLimit(slateId, seasonId),
+  };
+}
+
+/** What you must hit at the rack. Overlay 10 ppm / 0.62% benzene is here only, US CBOB only. */
+export function buildFinishedSpecs(
+  slateId: SlateId,
+  gradeId: GradeId,
+  seasonId: SeasonId,
+  ethanolMode: EthanolMode,
+  complianceOverlay: boolean,
+  waiverRequested: boolean,
+): ProductSpecs {
+  const base = baseQuality(slateId, gradeId, seasonId);
+  const overlay = complianceOverlay && isUsCbob(slateId);
+  return {
+    ...base,
+    rvpMaxPsi: finishedRvpLimit(slateId, seasonId, ethanolMode, waiverRequested),
+    sulfurMaxPpm: overlay ? 10 : base.sulfurMaxPpm,
+    benzeneMaxVolPct: overlay ? 0.62 : base.benzeneMaxVolPct,
+    oxygenMinWtPct: ethanolMode === "e10" && isUsCbob(slateId) ? 3.5 : base.oxygenMinWtPct,
+    oxygenMaxWtPct: base.oxygenMaxWtPct,
+  };
+}
+
+/** LP target: pipe CBOB unless the finished overlay is on for a US tank. */
+export function buildLpSpecs(
+  slateId: SlateId,
+  pipeSpecs: ProductSpecs,
+  finishedSpecs: ProductSpecs,
+  complianceOverlay: boolean,
+): ProductSpecs {
+  if (complianceOverlay && isUsCbob(slateId)) return { ...finishedSpecs };
+  return { ...pipeSpecs };
+}
+
+export function buildSpecLayers(
+  slateId: SlateId,
+  gradeId: GradeId,
+  seasonId: SeasonId,
+  ethanolMode: EthanolMode,
+  complianceOverlay: boolean,
+  waiverRequested: boolean,
+): { pipeSpecs: ProductSpecs; finishedSpecs: ProductSpecs; specs: ProductSpecs } {
+  const pipeSpecs = buildPipeSpecs(slateId, gradeId, seasonId);
+  const finishedSpecs = buildFinishedSpecs(
+    slateId,
+    gradeId,
+    seasonId,
+    ethanolMode,
+    complianceOverlay,
+    waiverRequested,
+  );
+  return {
+    pipeSpecs,
+    finishedSpecs,
+    specs: buildLpSpecs(slateId, pipeSpecs, finishedSpecs, complianceOverlay),
+  };
+}
+
+/** @deprecated Use buildSpecLayers. Kept so older call sites still compile during the cutover. */
+export function buildSpecs(
+  slateId: SlateId,
+  gradeId: GradeId,
+  seasonId: SeasonId,
+  ethanolMode: EthanolMode,
+  complianceOverlay: boolean,
+): ProductSpecs {
+  return buildSpecLayers(slateId, gradeId, seasonId, ethanolMode, complianceOverlay, false).specs;
+}
+
+export function lpRvpLimitFor(tank: Pick<ProductTank, "slateId" | "seasonId" | "ethanolMode" | "rvpWaiver" | "specs">): number {
+  return tank.specs.rvpMaxPsi;
+}
+
 export function slateNote(slateId: SlateId, complianceOverlay: boolean): string {
   if (slateId === "cpl-cbob") {
     return complianceOverlay
-      ? "Colonial CBOB receipt plus Tier 3 10 ppm sulfur and MSAT2 0.62 vol% benzene."
-      : "Colonial CBOB receipt: 80 ppm sulfur, 3.8 vol% benzene, D4814 distillation / DI.";
+      ? "Colonial CBOB pipe receipt is unchanged. Overlay is FINISHED only: 10 ppm S / 0.62 vol% benzene."
+      : "Colonial CBOB pipe receipt: 80 ppm sulfur, 3.8 vol% benzene. Overlay is off — LP uses the pipe tariff.";
   }
   if (slateId === "explorer-cbob") {
     return complianceOverlay
-      ? "Explorer CBOB receipt plus Tier 3 / MSAT2 overlay."
-      : "Explorer CBOB receipt: 80 ppm sulfur, 3.8 vol% benzene, D4814 DI.";
+      ? "Explorer CBOB pipe receipt is unchanged. Overlay is FINISHED only: 10 ppm S / 0.62 vol% benzene."
+      : "Explorer CBOB pipe receipt: 80 ppm sulfur, 3.8 vol% benzene. Overlay is off — LP uses the pipe tariff.";
   }
   if (slateId === "sfpp-carbob") {
-    return "SFPP / CaRFG3 cap-style CARBOB: 20 ppm S, 0.80 vol% benzene, T50 220 / T90 330, olefins 10%.";
+    return "SFPP West Coast BOB published caps (20 ppm S, 0.80 vol% benzene, T50 220 / T90 330). D86 T50/T90/DI are volume-linear approximations — not a CaRFG3 V/L or certified CARBOB check.";
   }
   if (slateId === "mexico-zmvm") {
-    return "NOM-016 ZMVM: 30 ppm S, 1.0% benzene, 25% aromatics, 10% olefins, Premium RON 94 / AKI 91.";
+    return "NOM-016 ZMVM: 30 ppm S, 1.0% benzene, 25% aromatics, 10% olefins, Premium RON 94 / AKI 91. Export — no RFS.";
   }
-  return "NOM-016 resto del país: 30 ppm S, 2.0% benzene, 32% aromatics.";
+  return "NOM-016 resto del país: 30 ppm S, 2.0% benzene, 32% aromatics. Export — no RFS.";
 }

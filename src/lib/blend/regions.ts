@@ -16,7 +16,7 @@ export const REGION_OPTIONS: { id: RegionId; label: string; note: string; slates
   {
     id: "west-coast",
     label: "West Coast",
-    note: "SFPP CARBOB. Cleaner treated streams, more alkylate.",
+    note: "SFPP West Coast BOB. Published caps, volume-linear D86 — not a CaRFG3 V/L or certified CARBOB check.",
     slates: ["sfpp-carbob"],
   },
   {

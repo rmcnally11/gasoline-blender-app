@@ -1,7 +1,7 @@
-import { aki } from "./math";
+import { blendingAkiOf } from "./octane";
 import { optimizePlant } from "./optimize";
 import { componentsForRegion, regionLabel, tanksOnRegion } from "./regions";
-import { rvoCostPerFinishedBbl } from "./rvo";
+import { rvoAppliesToTank, tankRvoDollars } from "./rvo";
 import type {
   Blendstock,
   ComponentSeekResult,
@@ -27,7 +27,7 @@ function usedOf(
   plant: Plant,
   componentId: string,
 ): { total: number; destination: Partial<Record<TankId, number>> } {
-  const solve = optimizePlant(plant);
+  const solve = optimizePlant(plant, { diagnose: false });
   const destination: Partial<Record<TankId, number>> = {};
   let total = 0;
   for (const tank of solve.tanks) {
@@ -40,6 +40,10 @@ function usedOf(
   return { total, destination };
 }
 
+/**
+ * LP indifference price: the most the destination header can pay for this stream
+ * and still take it. Same plant LP the header solve uses — not the heuristic debit card.
+ */
 export function impliedComponentValue(plant: Plant, regionId: RegionId, componentId: string): number | null {
   const stream = plant.components.find((component) => component.id === componentId);
   if (!stream || stream.regionId !== regionId) return null;
@@ -61,60 +65,70 @@ export function impliedComponentValue(plant: Plant, regionId: RegionId, componen
   return (lo + hi) / 2;
 }
 
-function qualityDebits(plant: Plant, regionId: RegionId, stream: Blendstock): QualityDebit[] {
+function heuristicQualityCard(plant: Plant, regionId: RegionId, stream: Blendstock): QualityDebit[] {
   const regionTanks = tanksOnRegion(plant.tanks, regionId);
   const regular =
     regionTanks.find((tank) => tank.gradeId === "regular" && tank.enabled) ?? regionTanks[0] ?? plant.tanks[0];
   const pool = componentsForRegion(plant.components, regionId);
   const alkylate = pool.find((component) => component.streamKey === "alkylate");
   const fcc = pool.find((component) => component.streamKey === "fcc");
-  const akiN = aki(stream.ron, stream.mon);
+  const mode = regular?.ethanolMode ?? "e10";
+  const akiN = blendingAkiOf(stream, mode);
   const akiSpec = regular?.specs.akiMin ?? 87;
   const octaneValue =
     alkylate && fcc
       ? Math.max(
           0,
           (alkylate.costPerBbl - fcc.costPerBbl) /
-            Math.max(0.5, aki(alkylate.ron, alkylate.mon) - aki(fcc.ron, fcc.mon)),
+            Math.max(0.5, blendingAkiOf(alkylate, mode) - blendingAkiOf(fcc, mode)),
         )
       : 3.5;
-  const sulfurLimit = regular?.specs.sulfurMaxPpm ?? 10;
-  const benzeneLimit = regular?.specs.benzeneMaxVolPct ?? 0.62;
-  const rvo = rvoCostPerFinishedBbl(plant.rvo);
+  const sulfurLimit = regular?.specs.sulfurMaxPpm ?? 80;
+  const benzeneLimit = regular?.specs.benzeneMaxVolPct ?? 3.8;
+  const sample = regular
+    ? tankRvoDollars(plant.rvo, regular, 1, 0)
+    : { obligation: 0, credit: 0, net: 0 };
   const diGive = Math.max(0, 1.5 * stream.t10F + 3 * stream.t50F + stream.t90F - (regular?.specs.diMax ?? 1250));
 
   return [
     {
       id: "octane",
-      label: "Octane",
+      label: "Octane (heuristic)",
       amount: Math.max(0, akiSpec - akiN) * octaneValue,
-      note: `${akiN.toFixed(1)} AKI vs ${akiSpec.toFixed(1)} spec, valued off ${regionLabel(regionId)} alkylate / FCC`,
+      note: `${akiN.toFixed(1)} BON AKI vs ${akiSpec.toFixed(1)} spec, valued off ${regionLabel(regionId)} alkylate / FCC. Not the bid.`,
+      heuristic: true,
     },
     {
       id: "sulfur",
-      label: "Sulfur",
+      label: "Sulfur (heuristic)",
       amount: Math.max(0, stream.sulfurPpm - sulfurLimit) * 0.18,
-      note: `${stream.sulfurPpm.toFixed(0)} ppm vs ${sulfurLimit.toFixed(0)} ppm versus the destination spec.`,
+      note: `${stream.sulfurPpm.toFixed(0)} ppm vs ${sulfurLimit.toFixed(0)} ppm. Heuristic giveaway, not the LP dual.`,
+      heuristic: true,
     },
     {
       id: "benzene",
-      label: "Benzene",
+      label: "Benzene (heuristic)",
       amount: Math.max(0, stream.benzeneVolPct - benzeneLimit) * 14,
-      note: `${stream.benzeneVolPct.toFixed(2)} vol% vs ${benzeneLimit.toFixed(2)} limit.`,
+      note: `${stream.benzeneVolPct.toFixed(2)} vol% vs ${benzeneLimit.toFixed(2)} limit. Heuristic, not the bid.`,
+      heuristic: true,
     },
     {
       id: "rvo",
-      label: "RVO",
-      amount: rvo,
-      note: plant.rvo.enabled
-        ? `${(plant.rvo.obligationRate * 100).toFixed(1)}% obligation × $${plant.rvo.d6RinPrice.toFixed(2)} D6. Hydrocarbon adds obligated gallons; ethanol credits RINs.`
-        : "RVO is off.",
+      label: "RVO (heuristic)",
+      amount: sample.obligation,
+      note: regular && rvoAppliesToTank(plant.rvo, regular)
+        ? `${(plant.rvo.obligationRate * 100).toFixed(1)}% on hydrocarbon gallons × $${plant.rvo.d6RinPrice.toFixed(2)} D6. Export / Mexico tanks are not charged. Heuristic card — the bid is the LP implied value.`
+        : "RVO is off for this destination (disabled or Mexico/export).",
+      heuristic: true,
     },
     {
       id: "distillation",
-      label: "Distillation / DI",
+      label: "Distillation / DI (heuristic)",
       amount: diGive * 0.04,
-      note: diGive > 0 ? "Heavy tail raises T90 / driveability index versus the slate." : "Front-end / DI is not the binding debit.",
+      note: diGive > 0
+        ? "Volume-linear D86 / DI approximation. Heuristic giveaway, not a V/L or CaRFG3 check."
+        : "Front-end / DI is not the binding heuristic debit.",
+      heuristic: true,
     },
   ];
 }
@@ -134,6 +148,7 @@ function emptySeek(
     kind: stream?.naphtha ?? null,
     offerPrice,
     impliedValue: null,
+    impliedSource: "lp",
     clears: false,
     usedBbl: 0,
     destination: {},
@@ -160,7 +175,7 @@ export function seekComponent(
       stream,
       offerPrice,
       `No destination tank is on ${label}. Point a tank slate at this market before valuing components.`,
-      qualityDebits(plant, regionId, stream),
+      heuristicQualityCard(plant, regionId, stream),
     );
   }
 
@@ -179,16 +194,17 @@ export function seekComponent(
     kind: stream.naphtha,
     offerPrice,
     impliedValue,
+    impliedSource: "lp",
     clears,
     usedBbl: usage.total,
     destination: usage.destination,
-    debits: qualityDebits(plant, regionId, stream),
+    debits: heuristicQualityCard(plant, regionId, stream),
     message:
       impliedGal === null
         ? `Could not value ${stream.name} into ${label}.`
         : clears
-          ? `Buys. At $${offerGal.toFixed(4)}/gal the header takes ${usage.total.toFixed(0)} bbl of ${stream.name} into ${Object.keys(usage.destination).join(", ") || "the lift"}. Implied value $${impliedGal.toFixed(4)}/gal.`
-          : `Does not buy at $${offerGal.toFixed(4)}/gal. Implied value versus the destination is $${impliedGal.toFixed(4)}/gal after quality, RVO, and freight.`,
+          ? `Buys. At $${offerGal.toFixed(4)}/gal the header takes ${usage.total.toFixed(0)} bbl of ${stream.name} into ${Object.keys(usage.destination).join(", ") || "the lift"}. LP implied value $${impliedGal.toFixed(4)}/gal (same plant LP as the header).`
+          : `Does not buy at $${offerGal.toFixed(4)}/gal. LP implied value versus the destination is $${impliedGal.toFixed(4)}/gal — same dual / indifference as the header, not the heuristic debit card.`,
   };
 }
 

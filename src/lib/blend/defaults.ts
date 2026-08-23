@@ -1,9 +1,39 @@
+import { defaultBlendingOctane } from "./octane";
 import { regionForSlate } from "./regions";
 import { DEFAULT_RVO } from "./rvo";
-import { buildSpecs, defaultEthanolMode, freightPerGalFor, GRADE_OPTIONS, rackPricePerBbl } from "./specs";
-import type { Blendstock, Plant, ProductTank, RegionId, SlateId, StreamKey, TankId } from "./types";
+import {
+  buildSpecLayers,
+  defaultEthanolMode,
+  defaultRvpWaiver,
+  freightPerGalFor,
+  GRADE_OPTIONS,
+  rackPricePerBbl,
+} from "./specs";
+import type { Blendstock, HeelQuality, Plant, ProductTank, RegionId, SlateId, StreamKey, TankId } from "./types";
 
-type StreamBase = Omit<Blendstock, "id" | "regionId">;
+type StreamBase = Omit<Blendstock, "id" | "regionId" | "blendingRon" | "blendingMon"> & {
+  blendingRon?: number;
+  blendingMon?: number;
+};
+
+export function defaultHeel(): HeelQuality {
+  return {
+    ron: 87.2,
+    mon: 81.4,
+    rvp: 8.6,
+    specificGravity: 0.735,
+    sulfurPpm: 22,
+    benzeneVolPct: 0.55,
+    aromaticsVolPct: 22,
+    olefinsVolPct: 8,
+    oxygenWtPct: 0,
+    t10F: 145,
+    t50F: 215,
+    t90F: 330,
+    e200VolPct: 40,
+    e300VolPct: 78,
+  };
+}
 
 function colonialStreams(): StreamBase[] {
   return [
@@ -362,6 +392,7 @@ function stampPool(regionId: RegionId, patches: Partial<Record<StreamKey, Partia
   return colonialStreams().map((stream) => {
     const patch = patches[stream.streamKey] ?? {};
     const inventoryBbl = patch.inventoryBbl ?? stream.inventoryBbl;
+    const bon = defaultBlendingOctane(stream.streamKey, patch.ron ?? stream.ron, patch.mon ?? stream.mon);
     return {
       ...stream,
       ...patch,
@@ -370,6 +401,8 @@ function stampPool(regionId: RegionId, patches: Partial<Record<StreamKey, Partia
       id: `${regionId}-${stream.streamKey}`,
       inventoryBbl,
       maxLiftBbl: patch.maxLiftBbl ?? inventoryBbl,
+      blendingRon: patch.blendingRon ?? stream.blendingRon ?? bon.blendingRon,
+      blendingMon: patch.blendingMon ?? stream.blendingMon ?? bon.blendingMon,
     };
   });
 }
@@ -504,6 +537,8 @@ function makeTank(
 ): ProductTank {
   const seasonId = "summer90";
   const ethanolMode = defaultEthanolMode(slateId);
+  const rvpWaiver = defaultRvpWaiver(slateId, seasonId, ethanolMode);
+  const layers = buildSpecLayers(slateId, gradeId, seasonId, ethanolMode, complianceOverlay, rvpWaiver);
   return {
     id,
     name,
@@ -512,11 +547,12 @@ function makeTank(
     slateId,
     seasonId,
     ethanolMode,
-    rvpWaiver: slateId === "cpl-cbob" || slateId === "explorer-cbob",
-    specs: buildSpecs(slateId, gradeId, seasonId, ethanolMode, complianceOverlay),
+    rvpWaiver,
+    ...layers,
     inventoryBbl,
     capacityBbl: id === "P2" ? 12000 : 28000,
     heelBbl: 400,
+    heel: defaultHeel(),
     demandBbl,
     rackPricePerBbl: rackPricePerBbl(gradeId, slateId),
     freightPerGal: freightPerGalFor(slateId),
@@ -524,7 +560,7 @@ function makeTank(
 }
 
 export function createDefaultPlant(): Plant {
-  const complianceOverlay = true;
+  const complianceOverlay = false;
   return {
     complianceOverlay,
     rvo: { ...DEFAULT_RVO },
@@ -537,11 +573,26 @@ export function createDefaultPlant(): Plant {
   };
 }
 
-export function refreshTankSpecs(tank: ProductTank, complianceOverlay: boolean): ProductTank {
+export function refreshTankSpecs(
+  tank: ProductTank,
+  complianceOverlay: boolean,
+  options: { resetWaiver?: boolean } = {},
+): ProductTank {
+  const rvpWaiver = options.resetWaiver
+    ? defaultRvpWaiver(tank.slateId, tank.seasonId, tank.ethanolMode)
+    : tank.rvpWaiver;
+  const layers = buildSpecLayers(
+    tank.slateId,
+    tank.gradeId,
+    tank.seasonId,
+    tank.ethanolMode,
+    complianceOverlay,
+    rvpWaiver,
+  );
   return {
     ...tank,
-    specs: buildSpecs(tank.slateId, tank.gradeId, tank.seasonId, tank.ethanolMode, complianceOverlay),
-    rvpWaiver: tank.slateId === "cpl-cbob" || tank.slateId === "explorer-cbob" ? tank.rvpWaiver : false,
+    rvpWaiver,
+    ...layers,
   };
 }
 

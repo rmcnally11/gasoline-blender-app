@@ -7,7 +7,7 @@ export default function P3Page() {
   return (
     <AppShell
       title="P3"
-      subtitle="Starts on Colonial with P1. Change the slate to price a different pipeline or export lift."
+      subtitle="Starts on Colonial with P1. Heel is in the mix. Switch the slate to price another pipe or Mexico."
     >
       <TankPage tankId="P3" />
     </AppShell>

@@ -7,7 +7,7 @@ export default function P1Page() {
   return (
     <AppShell
       title="P1"
-      subtitle="Colonial destination. Set the CBOB marker and freight in $/gal, then value naphtha and blendstocks against that netback."
+      subtitle="Colonial lift. Pipe CBOB receipt unless you turn the finished overlay on. Heel is in the mix."
     >
       <TankPage tankId="P1" />
     </AppShell>

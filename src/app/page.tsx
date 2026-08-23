@@ -7,7 +7,7 @@ export default function HomePage() {
   return (
     <AppShell
       title="Plant"
-      subtitle="Price components in $/gal against a fungible or export destination. Lock naphtha you own, then value what else you can buy to blend and ship."
+      subtitle="Buy components and blend heel + new barrels to a published spec. Pipe receipt and finished are separate. Type your book."
     >
       <PlantDesk />
     </AppShell>

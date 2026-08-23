@@ -37,9 +37,8 @@ export function MarketValues({
           <div>
             <CardTitle>{regionLabel} component book</CardTitle>
             <CardDescription>
-              Every input is $/gal. Market is your bid or tank mark. Implied is the most the
-              destination can pay and still beat buying the fungible / export barrel, after
-              quality, RVO, and freight. If market ≤ implied, you can buy it to blend and ship.
+              Every input is $/gal. Implied is the plant LP indifference price — the same dual
+              the header uses. If a quality debit card is shown, it is a heuristic, not the bid.
             </CardDescription>
           </div>
           <ActionButton onClick={onSeek} busy={busy}>

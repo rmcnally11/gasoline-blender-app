@@ -29,8 +29,10 @@ export function PlantDesk() {
       <div className="grid gap-3 md:grid-cols-2">
         <div className="flex items-end justify-between rounded-xl border border-border bg-card/80 px-3 py-2">
           <div>
-            <Label className="text-xs text-muted-foreground">Tier 3 / MSAT2 overlay</Label>
-            <p className="text-xs text-muted-foreground">10 ppm S and 0.62% benzene on US CBOB</p>
+            <Label className="text-xs text-muted-foreground">Finished overlay (Tier 3 / MSAT2)</Label>
+            <p className="text-xs text-muted-foreground">
+              10 ppm S / 0.62% benzene on the FINISHED row only. Pipe CBOB receipt stays 80 ppm / 3.8%. Off by default.
+            </p>
           </div>
           <Switch
             checked={plant.complianceOverlay}
@@ -40,8 +42,10 @@ export function PlantDesk() {
         </div>
         <div className="flex items-end justify-between rounded-xl border border-border bg-card/80 px-3 py-2">
           <div>
-            <Label className="text-xs text-muted-foreground">RVO</Label>
-            <p className="text-xs text-muted-foreground">Obligation on finished gasoline, RINs on ethanol</p>
+            <Label className="text-xs text-muted-foreground">RFS / RVO</Label>
+            <p className="text-xs text-muted-foreground">
+              Obligation on hydrocarbon gallons. RINs on neat ethanol after denaturant. Mexico off.
+            </p>
           </div>
           <Switch
             checked={plant.rvo.enabled}
@@ -65,6 +69,16 @@ export function PlantDesk() {
             digits={2}
             step={0.05}
             onChange={(value) => updateRvo("d6RinPrice", value)}
+          />
+        </label>
+        <label className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Ethanol denaturant, vol%</Label>
+          <NumberField
+            value={plant.rvo.denaturantVolFrac * 100}
+            digits={1}
+            step={0.5}
+            min={0}
+            onChange={(value) => updateRvo("denaturantVolFrac", value / 100)}
           />
         </label>
       </div>

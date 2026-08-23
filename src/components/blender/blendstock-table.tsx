@@ -28,7 +28,7 @@ export function BlendstockTable({
             <th className="pb-2 text-right font-medium">Used</th>
             <th className="pb-2 text-right font-medium">Left</th>
             <th className="pb-2 text-right font-medium">Market $/gal</th>
-            <th className="pb-2 text-right font-medium">AKI</th>
+            <th className="pb-2 text-right font-medium">BON AKI</th>
             <th className="pb-2 text-right font-medium">RVP</th>
             <th className="pb-2 text-right font-medium">S</th>
             <th className="pb-2 text-right font-medium">Bz</th>
@@ -95,7 +95,7 @@ export function BlendstockTable({
                   />
                 </td>
                 <td className="py-2 text-right font-mono tabular-nums">
-                  {formatNumber((component.ron + component.mon) / 2, 1)}
+                  {formatNumber((component.blendingRon + component.blendingMon) / 2, 1)}
                 </td>
                 <td className="py-2 text-right font-mono tabular-nums">{formatNumber(component.rvp, 1)}</td>
                 <td className="py-2 text-right font-mono tabular-nums">{formatNumber(component.sulfurPpm, 1)}</td>

@@ -58,17 +58,34 @@ function emptySolve(): PlantSolve {
     status: "idle",
     message: "Press Solve plant to allocate each regional book.",
     recipe: { barrels: { P1: {}, P2: {}, P3: {} } },
-    tanks: [
-      { tankId: "P1", recipe: { volumes: {} }, barrels: {}, properties: null },
-      { tankId: "P2", recipe: { volumes: {} }, barrels: {}, properties: null },
-      { tankId: "P3", recipe: { volumes: {} }, barrels: {}, properties: null },
-    ],
+    tanks: (["P1", "P2", "P3"] as const).map((tankId) => ({
+      tankId,
+      recipe: { volumes: {} },
+      barrels: {},
+      properties: null,
+      cleanBatch: true,
+      mixedFails: false,
+      failReasons: [],
+      lpRvpLimit: 9,
+      rvpClassPsi: 9,
+      waiverApplied: false,
+      bonsUsed: [],
+    })),
     componentUsedBbl: {},
     blendCost: null,
     revenue: null,
     rvoCost: null,
+    rvoObligation: null,
+    rvoCredit: null,
+    rvoObligationPerBbl: null,
+    rvoCreditPerBbl: null,
+    rvoNetPerBbl: null,
     freightCost: null,
     margin: null,
+    impliedValues: {},
+    bindingConstraints: [],
+    relaxOptions: [],
+    cheapestRelax: null,
   };
 }
 
@@ -160,7 +177,8 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
         if (patch.slateId && patch.freightPerGal === undefined) {
           nextTank.freightPerGal = freightPerGalFor(patch.slateId);
         }
-        const refreshed = refreshTankSpecs(nextTank, current.complianceOverlay);
+        const resetWaiver = Boolean(patch.slateId || patch.seasonId || patch.ethanolMode);
+        const refreshed = refreshTankSpecs(nextTank, current.complianceOverlay, { resetWaiver });
         if ((patch.slateId || patch.gradeId) && patch.rackPricePerBbl === undefined) {
           refreshed.rackPricePerBbl = rackPricePerBbl(refreshed.gradeId, refreshed.slateId);
         }
@@ -174,9 +192,13 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
   const updateTankSpecs = useCallback((id: TankId, patch: Partial<ProductSpecs>) => {
     setPlant((current) => ({
       ...current,
-      tanks: current.tanks.map((tank) =>
-        tank.id === id ? { ...tank, specs: { ...tank.specs, ...patch } } : tank,
-      ),
+      tanks: current.tanks.map((tank) => {
+        if (tank.id !== id) return tank;
+        const specs = { ...tank.specs, ...patch };
+        return current.complianceOverlay
+          ? { ...tank, specs, finishedSpecs: { ...tank.finishedSpecs, ...patch } }
+          : { ...tank, specs, pipeSpecs: { ...tank.pipeSpecs, ...patch } };
+      }),
     }));
     setSolverStatus("idle");
     setDirty(true);

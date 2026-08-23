@@ -2,6 +2,7 @@ export * from "./defaults";
 export * from "./format";
 export * from "./goalseek";
 export * from "./math";
+export * from "./octane";
 export * from "./optimize";
 export * from "./properties";
 export * from "./regions";

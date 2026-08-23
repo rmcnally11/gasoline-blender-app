@@ -1,6 +1,6 @@
 "use client";
 
-import { formatNumber, formatPerGal, perGallon } from "@/lib/blend";
+import { formatMoney, formatNumber, formatPerGal, perGallon } from "@/lib/blend";
 import { usePlant } from "./plant-context";
 
 export function EconomicsStrip() {
@@ -8,7 +8,6 @@ export function EconomicsStrip() {
   const gallons = finishedBbl * 42;
   const marker = perGallon(solve.revenue, finishedBbl);
   const blend = perGallon(solve.blendCost, finishedBbl);
-  const rvo = perGallon(solve.rvoCost, finishedBbl);
   const freight = perGallon(solve.freightCost, finishedBbl);
   const margin = perGallon(solve.margin, finishedBbl);
 
@@ -19,15 +18,14 @@ export function EconomicsStrip() {
           <h2 className="text-sm font-medium">Netback versus destination</h2>
           <p className="text-xs text-muted-foreground">
             {solverStatus === "optimal"
-              ? `Marker, components, RVO, and freight on ${formatNumber(gallons, 0)} finished gallons.`
-              : "Press Solve plant. Everything here is dollars per finished gallon."}
+              ? `Marker, components, and freight on ${formatNumber(gallons, 0)} finished gallons. RFS is booked in $/bbl below.`
+              : "Press Solve plant. Marker, components, and freight are $/gal. RFS is three $/bbl numbers."}
           </p>
         </div>
       </div>
-      <dl className="grid grid-cols-2 gap-2 md:grid-cols-5">
+      <dl className="grid grid-cols-2 gap-2 md:grid-cols-4">
         <Metric label="Marker" value={formatPerGal(marker)} hint="Fungible / export" />
-        <Metric label="Components" value={formatPerGal(blend)} hint="Market cost into the lift" />
-        <Metric label="RVO net" value={formatPerGal(rvo)} hint="Obligation − ethanol RINs" />
+        <Metric label="Components" value={formatPerGal(blend)} hint="New barrels into the lift" />
         <Metric label="Freight" value={formatPerGal(freight)} hint="Pipeline tariff or export" />
         <Metric
           label="Net"
@@ -36,6 +34,33 @@ export function EconomicsStrip() {
           tone={margin === null ? "muted" : margin >= 0 ? "good" : "bad"}
         />
       </dl>
+      <div className="mt-3">
+        <h3 className="text-xs font-medium">RFS book, $/bbl</h3>
+        <p className="mb-2 text-[11px] text-muted-foreground">
+          Obligation on hydrocarbon gallons only. Ethanol RINs after denaturant. Mexico / export tanks
+          are not charged.
+        </p>
+        <dl className="grid grid-cols-3 gap-2">
+          <Metric
+            label="Obligation"
+            value={formatMoney(solve.rvoObligationPerBbl, 3)}
+            hint="$/bbl hydrocarbon RVO"
+          />
+          <Metric
+            label="RIN credit"
+            value={formatMoney(solve.rvoCreditPerBbl, 3)}
+            hint="$/bbl neat ethanol RINs"
+          />
+          <Metric
+            label="RFS net"
+            value={formatMoney(solve.rvoNetPerBbl, 3)}
+            hint="Obligation − credit"
+            tone={
+              solve.rvoNetPerBbl === null ? "muted" : solve.rvoNetPerBbl <= 0 ? "good" : "bad"
+            }
+          />
+        </dl>
+      </div>
     </section>
   );
 }

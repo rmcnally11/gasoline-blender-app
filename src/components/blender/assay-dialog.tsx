@@ -14,8 +14,10 @@ import { perBblFromGal, perGalFromBbl, regionLabel, type Blendstock } from "@/li
 import { NumberField } from "./number-field";
 
 const FIELDS: { key: keyof Blendstock; label: string; step: number; digits: number }[] = [
-  { key: "ron", label: "Blending RON", step: 0.1, digits: 1 },
-  { key: "mon", label: "Blending MON", step: 0.1, digits: 1 },
+  { key: "ron", label: "Neat RON", step: 0.1, digits: 1 },
+  { key: "mon", label: "Neat MON", step: 0.1, digits: 1 },
+  { key: "blendingRon", label: "BON RON (LP)", step: 0.1, digits: 1 },
+  { key: "blendingMon", label: "BON MON (LP)", step: 0.1, digits: 1 },
   { key: "rvp", label: "RVP, psi", step: 0.1, digits: 1 },
   { key: "specificGravity", label: "Specific gravity", step: 0.001, digits: 3 },
   { key: "sulfurPpm", label: "Sulfur, ppm", step: 0.5, digits: 1 },
@@ -54,7 +56,7 @@ export function AssayDialog({
           <DialogTitle>{component?.name ?? "Blendstock"}</DialogTitle>
           <DialogDescription>
             {component
-              ? `Assay and inventory for this stream in the ${regionLabel(component.regionId)} pool. Distillation is D86 °F. Octane numbers are blending octanes.`
+              ? `Assay and inventory for this stream in the ${regionLabel(component.regionId)} pool. Distillation is D86 °F (volume-linear approximation). The LP uses BON, not neat RON/MON. Prices stay yours.`
               : "Blending assay and tank inventory."}
           </DialogDescription>
         </DialogHeader>

@@ -23,17 +23,23 @@ const EDITABLE: Partial<Record<string, { key: keyof ProductSpecs; step: number; 
   di: { key: "diMax", step: 5, digits: 0 },
 };
 
+function limitText(limit: number | null, digits: number): string {
+  return limit === null ? "—" : formatNumber(limit, digits);
+}
+
 export function SpecSheet({
   checks,
   specs,
   onSpecChange,
   rvpNote,
+  overlayOn,
   compact = false,
 }: {
   checks: SpecCheck[];
   specs: ProductSpecs;
   onSpecChange: (patch: Partial<ProductSpecs>) => void;
   rvpNote: string;
+  overlayOn: boolean;
   compact?: boolean;
 }) {
   const shown = compact
@@ -44,12 +50,14 @@ export function SpecSheet({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[26rem] border-separate border-spacing-0 text-sm">
+      <table className="w-full min-w-[36rem] border-separate border-spacing-0 text-sm">
         <thead>
           <tr className="text-left text-xs text-muted-foreground">
             <th className="pb-2 font-medium">Property</th>
             <th className="pb-2 text-right font-medium">Blend</th>
-            <th className="pb-2 text-right font-medium">Limit</th>
+            <th className="pb-2 text-right font-medium">Pipe receipt</th>
+            <th className="pb-2 text-right font-medium">Finished</th>
+            <th className="pb-2 text-right font-medium">LP</th>
             <th className="pb-2 text-right font-medium">Slack</th>
             <th className="pb-2 pl-3 font-medium">Status</th>
           </tr>
@@ -58,6 +66,7 @@ export function SpecSheet({
           {shown.map((check) => {
             const editable = EDITABLE[check.id];
             const limitValue = editable ? specs[editable.key] : check.limit;
+            const digits = editable?.digits ?? 2;
             return (
               <tr key={check.id} className="border-t border-border/70">
                 <td className="py-1.5 pr-3">
@@ -70,10 +79,18 @@ export function SpecSheet({
                   {check.status === "idle" ? "—" : formatNumber(check.value, check.unit === "°F" || check.unit === "DI" ? 0 : 2)}
                   <span className="ml-1 text-[11px] text-muted-foreground">{check.unit}</span>
                 </td>
+                <td className="py-1.5 text-right font-mono text-xs tabular-nums text-muted-foreground">
+                  {limitText(check.pipeLimit, digits)}
+                </td>
+                <td className="py-1.5 text-right font-mono text-xs tabular-nums">
+                  <span className={overlayOn && (check.id === "sulfur" || check.id === "benzene") ? "text-amber-800" : "text-muted-foreground"}>
+                    {limitText(check.finishedLimit, digits)}
+                  </span>
+                </td>
                 <td className="py-1.5 pl-3">
                   {editable && limitValue !== null ? (
                     <NumberField
-                      aria-label={`${check.label} limit`}
+                      aria-label={`${check.label} LP limit`}
                       className="ml-auto w-20"
                       value={Number(limitValue)}
                       digits={editable.digits}
@@ -95,6 +112,11 @@ export function SpecSheet({
           })}
         </tbody>
       </table>
+      <p className="pt-2 text-[11px] text-muted-foreground">
+        Pipe receipt is the Colonial / Explorer / SFPP / Mexico tariff. Finished is the rack.
+        Overlay 10 ppm S / 0.62% benzene writes the finished column only. LP is the number the
+        solver is using.
+      </p>
     </div>
   );
 }
@@ -102,6 +124,7 @@ export function SpecSheet({
 function SpecBadge({ check }: { check: SpecCheck }) {
   if (check.status === "idle") return <Badge variant="outline">Waiting</Badge>;
   if (check.status === "fail") return <Badge variant="destructive">Off spec</Badge>;
+  if (check.status === "batch") return <Badge variant="outline">Clean batch</Badge>;
   if (check.binding) return <Badge className="bg-amber-500/15 text-amber-800">Binding</Badge>;
   return <Badge className="bg-emerald-500/15 text-emerald-800">On spec</Badge>;
 }

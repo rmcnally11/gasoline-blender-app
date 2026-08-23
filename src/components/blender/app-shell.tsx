@@ -103,7 +103,22 @@ export function AppShell({
           <Alert variant="destructive">
             <AlertTriangle />
             <AlertTitle>No feasible plant allocation</AlertTitle>
-            <AlertDescription>{solve.message}</AlertDescription>
+            <AlertDescription>
+              <p>{solve.message}</p>
+              {solve.bindingConstraints.length > 0 ? (
+                <p className="mt-1">
+                  Binding: {solve.bindingConstraints.map((item) => item.label).join(", ")}.
+                </p>
+              ) : null}
+              {solve.cheapestRelax ? (
+                <p className="mt-1">Cheapest relax: {solve.cheapestRelax.label}.</p>
+              ) : null}
+              {solve.relaxOptions.length > 0 ? (
+                <p className="mt-1">
+                  Tried {solve.relaxOptions.map((item) => `${item.label}${item.feasible ? " (works)" : ""}`).join(", ")}.
+                </p>
+              ) : null}
+            </AlertDescription>
           </Alert>
         ) : null}
         {onManual || !showEconomics ? null : <EconomicsStrip />}
