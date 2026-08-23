@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { componentsForRegion, regionLabel } from "@/lib/blend";
+import { BlendBoard } from "./blend-board";
 import { EconomicsStrip } from "./economics-strip";
 import { MarketValues } from "./market-values";
 import { MarksCompare } from "./marks-compare";
@@ -49,6 +50,7 @@ export function PlantDesk() {
         <>
           {destinations}
           <MarksCompare />
+          <BlendBoard />
           <MoneyScreen />
           {seek}
         </>
@@ -63,6 +65,16 @@ export function PlantDesk() {
               <MarksCompare />
               <EconomicsStrip />
               <MoneyScreen />
+            </>
+          ),
+        },
+        {
+          id: "blends",
+          label: "Blends",
+          content: (
+            <>
+              <MarksHeader />
+              <BlendBoard />
             </>
           ),
         },

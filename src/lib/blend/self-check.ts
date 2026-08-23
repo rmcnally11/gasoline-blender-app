@@ -1,3 +1,4 @@
+import { blendBoard } from "./blend-board";
 import { applyMarksAndBook } from "../marks/apply";
 import { rowsFromComponentBookRecords } from "../marks/airtable";
 import { compareSettlementDays } from "../marks/compare";
@@ -503,6 +504,47 @@ function checkBookFetchFailIsLoud() {
   assert(failed.message.includes("Component Book fetch failed"), "fail path must carry a message");
 }
 
+function checkBlendBoard() {
+  const idle = blendBoard(createDefaultPlant(), {
+    status: "idle",
+    message: "idle",
+    recipe: { barrels: { P1: {}, P2: {}, P3: {} } },
+    tanks: [],
+    componentUsedBbl: {},
+    blendCost: null,
+    revenue: null,
+    rvoCost: null,
+    rvoObligation: null,
+    rvoCredit: null,
+    rvoObligationPerBbl: null,
+    rvoCreditPerBbl: null,
+    rvoNetPerBbl: null,
+    freightCost: null,
+    margin: null,
+    impliedValues: {},
+    bindingConstraints: [],
+    relaxOptions: [],
+    cheapestRelax: null,
+  });
+  assert(idle.ready === false, "idle plant has no blend board");
+
+  const plant = createDefaultPlant();
+  const solve = optimizePlant(plant, { diagnose: false });
+  assert(solve.status === "optimal", solve.message);
+  const board = blendBoard(plant, solve);
+  assert(board.ready, "solved plant should draw a board");
+  assert(board.streams.length > 0, "solved plant must show lifted streams");
+  for (const row of board.streams) {
+    const sum = row.into.P1 + row.into.P2 + row.into.P3;
+    assert(almost(sum, row.barrels), `${row.id} tank split ${sum} vs ${row.barrels}`);
+    assert(almost(row.barrels, solve.componentUsedBbl[row.id] ?? 0), `${row.id} must match frozen used`);
+  }
+  assert(board.quality.some((row) => row.tankId === "P1" && row.specId === "aki"), "P1 AKI slack missing");
+  assert(board.dollars !== null, "dollar stack missing");
+  const d = board.dollars!;
+  assert(almost(d.margin, d.revenue - d.blendCost - d.rvoNet - d.freight), "margin must be the stack");
+}
+
 function checkLiftCall() {
   assert(liftDecision({ bookPerBbl: 100, impliedPerBbl: 99.8, epsilonPerBbl: 0.25, priceOrigin: "basis" }).call === "LIFT", "within epsilon");
   assert(liftDecision({ bookPerBbl: 100, impliedPerBbl: 99.7, epsilonPerBbl: 0.25, priceOrigin: "basis" }).call === "DON'T LIFT", "outside epsilon");
@@ -529,5 +571,6 @@ checkComponentBookAirtableRows();
 checkEmptyBookDoesNotInventAlk();
 checkFrozenRecipeDayOverDay();
 checkBookFetchFailIsLoud();
+checkBlendBoard();
 checkLiftCall();
 console.log("blend engine checks passed");

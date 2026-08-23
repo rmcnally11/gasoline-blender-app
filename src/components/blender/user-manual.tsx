@@ -64,7 +64,8 @@ export function UserManual() {
               Plant
             </Link>{" "}
             — P&amp;L after Solve, last settlement vs prior on the{" "}
-            <TermTip term="frozenRecipe">frozen recipe</TermTip>, and Bids.
+            <TermTip term="frozenRecipe">frozen recipe</TermTip>, Blends (barrels into P1/P2/P3,
+            spec slack, dollar stack), and Bids.
           </li>
           <li>
             <Link href="/inputs" className="text-sky-800 underline underline-offset-2">

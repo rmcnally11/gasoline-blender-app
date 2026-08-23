@@ -200,6 +200,11 @@ export const GLOSSARY = {
     short: "Finished E10 in a 9.0 class only. Pipe CBOB unchanged. Not 7.8.",
     long: "You can request it; the model applies it only when ethanol is locked E10 and the class is actually 9.0. Off means finished stays at class.",
   },
+  slack: {
+    term: "Slack",
+    short: "Room to the spec the LP is using. Binding means slack is about zero.",
+    long: "On a min spec (AKI) slack is blend − limit. On a max spec (RVP, S, benzene) slack is limit − blend. The Blends tab shows this for the mixed tank after Solve.",
+  },
   shipVolume: {
     term: "Ship volume, bbl",
     short: "Finished barrels in the mixed tank — heel plus new. This is the lift size.",

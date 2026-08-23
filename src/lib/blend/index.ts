@@ -1,3 +1,4 @@
+export * from "./blend-board";
 export * from "./defaults";
 export * from "./format";
 export * from "./goalseek";
