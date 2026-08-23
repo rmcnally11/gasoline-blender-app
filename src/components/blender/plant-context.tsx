@@ -4,13 +4,16 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import {
   createDefaultPlant,
   defaultEthanolMode,
+  freightPerGalFor,
   optimizePlant,
+  rackPricePerBbl,
+  perGalFromBbl,
   refreshTankSpecs,
   regionForSlate,
   regionLabel,
-  seekNaphtha,
+  seekRegion,
   type Blendstock,
-  type NaphthaSeekResult,
+  type ComponentSeekResult,
   type Plant,
   type PlantSolve,
   type ProductSpecs,
@@ -20,24 +23,7 @@ import {
   type TankId,
 } from "@/lib/blend";
 
-type RegionPrices = Record<RegionId, { light: number; heavy: number }>;
-type RegionSeeks = Record<RegionId, { light: NaphthaSeekResult | null; heavy: NaphthaSeekResult | null }>;
-
-const DEFAULT_PRICES: RegionPrices = {
-  colonial: { light: 72, heavy: 68 },
-  explorer: { light: 70, heavy: 66 },
-  "west-coast": { light: 78, heavy: 74 },
-  mexico: { light: 64, heavy: 60 },
-};
-
-function emptySeeks(): RegionSeeks {
-  return {
-    colonial: { light: null, heavy: null },
-    explorer: { light: null, heavy: null },
-    "west-coast": { light: null, heavy: null },
-    mexico: { light: null, heavy: null },
-  };
-}
+type SeekBook = Record<string, ComponentSeekResult>;
 
 type BusyKind = "solve" | "seek" | null;
 
@@ -50,17 +36,12 @@ type PlantContextValue = {
   lastAction: string | null;
   activeRegion: RegionId;
   setActiveRegion: (regionId: RegionId) => void;
-  lightPrice: number;
-  heavyPrice: number;
-  lightResult: NaphthaSeekResult | null;
-  heavyResult: NaphthaSeekResult | null;
+  seeks: SeekBook;
   editingId: string | null;
   setEditingId: (id: string | null) => void;
   solvePlant: () => void;
   resetPlant: () => void;
   runSeek: () => void;
-  setLightPrice: (price: number) => void;
-  setHeavyPrice: (price: number) => void;
   updateTank: (id: TankId, patch: Partial<ProductTank>) => void;
   updateTankSpecs: (id: TankId, patch: Partial<ProductSpecs>) => void;
   updateComponent: (id: string, patch: Partial<Blendstock>) => void;
@@ -75,7 +56,7 @@ const PlantContext = createContext<PlantContextValue | null>(null);
 function emptySolve(): PlantSolve {
   return {
     status: "idle",
-    message: "Press Solve plant to allocate each regional pool.",
+    message: "Press Solve plant to allocate each regional book.",
     recipe: { barrels: { P1: {}, P2: {}, P3: {} } },
     tanks: [
       { tankId: "P1", recipe: { volumes: {} }, barrels: {}, properties: null },
@@ -86,6 +67,7 @@ function emptySolve(): PlantSolve {
     blendCost: null,
     revenue: null,
     rvoCost: null,
+    freightCost: null,
     margin: null,
   };
 }
@@ -98,25 +80,20 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
   const [busy, setBusy] = useState<BusyKind>(null);
   const [lastAction, setLastAction] = useState<string | null>(null);
   const [activeRegion, setActiveRegion] = useState<RegionId>("colonial");
-  const [regionPrices, setRegionPrices] = useState<RegionPrices>(DEFAULT_PRICES);
-  const [regionSeeks, setRegionSeeks] = useState<RegionSeeks>(emptySeeks);
+  const [seekBooks, setSeekBooks] = useState<Partial<Record<RegionId, SeekBook>>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const plantRef = useRef(plant);
-  const pricesRef = useRef(regionPrices);
   const regionRef = useRef(activeRegion);
   plantRef.current = plant;
-  pricesRef.current = regionPrices;
   regionRef.current = activeRegion;
 
-  const lightPrice = regionPrices[activeRegion].light;
-  const heavyPrice = regionPrices[activeRegion].heavy;
-  const lightResult = regionSeeks[activeRegion].light;
-  const heavyResult = regionSeeks[activeRegion].heavy;
+  const seeks = seekBooks[activeRegion] ?? {};
 
   const applySolve = useCallback((next: Plant, label: string) => {
     const result = optimizePlant(next);
     setPlant(next);
+    plantRef.current = next;
     setSolve(result);
     setSolverStatus(result.status);
     setDirty(false);
@@ -141,15 +118,11 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       try {
         const current = plantRef.current;
         const region = regionRef.current;
-        const prices = pricesRef.current[region];
-        setRegionSeeks((prev) => ({
-          ...prev,
-          [region]: {
-            light: seekNaphtha(current, region, "light", prices.light),
-            heavy: seekNaphtha(current, region, "heavy", prices.heavy),
-          },
-        }));
-        setLastAction(`Goal-seek finished for ${regionLabel(region)}.`);
+        const book = Object.fromEntries(
+          seekRegion(current, region).map((item) => [item.componentId, item]),
+        );
+        setSeekBooks((prev) => ({ ...prev, [region]: book }));
+        setLastAction(`Valued ${regionLabel(region)} components versus the destination.`);
       } finally {
         setBusy(null);
       }
@@ -160,33 +133,17 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
     solvePlant();
     window.setTimeout(() => {
       const current = plantRef.current;
-      const prices = pricesRef.current;
-      setRegionSeeks({
-        colonial: {
-          light: seekNaphtha(current, "colonial", "light", prices.colonial.light),
-          heavy: seekNaphtha(current, "colonial", "heavy", prices.colonial.heavy),
-        },
-        explorer: {
-          light: seekNaphtha(current, "explorer", "light", prices.explorer.light),
-          heavy: seekNaphtha(current, "explorer", "heavy", prices.explorer.heavy),
-        },
-        "west-coast": {
-          light: seekNaphtha(current, "west-coast", "light", prices["west-coast"].light),
-          heavy: seekNaphtha(current, "west-coast", "heavy", prices["west-coast"].heavy),
-        },
-        mexico: {
-          light: seekNaphtha(current, "mexico", "light", prices.mexico.light),
-          heavy: seekNaphtha(current, "mexico", "heavy", prices.mexico.heavy),
-        },
-      });
+      const book = Object.fromEntries(
+        seekRegion(current, "colonial").map((item) => [item.componentId, item]),
+      );
+      setSeekBooks((prev) => ({ ...prev, colonial: book }));
     }, 40);
   }, [solvePlant]);
 
   const resetPlant = useCallback(() => {
     const next = createDefaultPlant();
     applySolve(next, "Plant reset to defaults.");
-    setRegionPrices(DEFAULT_PRICES);
-    setRegionSeeks(emptySeeks());
+    setSeekBooks({});
     setActiveRegion("colonial");
   }, [applySolve]);
 
@@ -200,7 +157,14 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
         if (patch.slateId && patch.ethanolMode === undefined) {
           nextTank.ethanolMode = defaultEthanolMode(patch.slateId);
         }
-        return refreshTankSpecs(nextTank, current.complianceOverlay);
+        if (patch.slateId && patch.freightPerGal === undefined) {
+          nextTank.freightPerGal = freightPerGalFor(patch.slateId);
+        }
+        const refreshed = refreshTankSpecs(nextTank, current.complianceOverlay);
+        if ((patch.slateId || patch.gradeId) && patch.rackPricePerBbl === undefined) {
+          refreshed.rackPricePerBbl = rackPricePerBbl(refreshed.gradeId, refreshed.slateId);
+        }
+        return refreshed;
       }),
     };
     applySolve(next, `${id} updated and re-solved.`);
@@ -228,9 +192,13 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
         component.id === id ? { ...component, ...patch } : component,
       ),
     };
+    const name = current.components.find((component) => component.id === id)?.name ?? "Stream";
     if (keys.length === 1 && keys[0] === "costPerBbl" && patch.costPerBbl !== undefined) {
-      const name = current.components.find((component) => component.id === id)?.name ?? "Stream";
-      applySolve(next, `${name} market set to $${patch.costPerBbl.toFixed(2)}/bbl.`);
+      applySolve(next, `${name} market set to $${perGalFromBbl(patch.costPerBbl).toFixed(4)}/gal.`);
+      return;
+    }
+    if (keys.length === 1 && keys[0] === "minLiftBbl" && patch.minLiftBbl !== undefined) {
+      applySolve(next, `${name} must-use set to ${patch.minLiftBbl.toFixed(0)} bbl.`);
       return;
     }
     setPlant(next);
@@ -270,27 +238,12 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       lastAction,
       activeRegion,
       setActiveRegion,
-      lightPrice,
-      heavyPrice,
-      lightResult,
-      heavyResult,
+      seeks,
       editingId,
       setEditingId,
       solvePlant,
       resetPlant,
       runSeek,
-      setLightPrice: (price: number) => {
-        setRegionPrices((current) => ({
-          ...current,
-          [activeRegion]: { ...current[activeRegion], light: price },
-        }));
-      },
-      setHeavyPrice: (price: number) => {
-        setRegionPrices((current) => ({
-          ...current,
-          [activeRegion]: { ...current[activeRegion], heavy: price },
-        }));
-      },
       updateTank,
       updateTankSpecs,
       updateComponent,
@@ -307,10 +260,7 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       busy,
       lastAction,
       activeRegion,
-      lightPrice,
-      heavyPrice,
-      lightResult,
-      heavyResult,
+      seeks,
       editingId,
       solvePlant,
       resetPlant,

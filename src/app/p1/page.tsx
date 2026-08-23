@@ -7,7 +7,7 @@ export default function P1Page() {
   return (
     <AppShell
       title="P1"
-      subtitle="Finished-product tank. Spec slate picks both the quality limits and the regional blend pool. P3 shares Colonial barrels with this tank; P2 does not."
+      subtitle="Colonial destination. Set the CBOB marker and freight in $/gal, then value naphtha and blendstocks against that netback."
     >
       <TankPage tankId="P1" />
     </AppShell>

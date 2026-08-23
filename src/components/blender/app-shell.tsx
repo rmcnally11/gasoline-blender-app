@@ -91,7 +91,7 @@ export function AppShell({
           {onManual ? null : lastAction || dirty ? (
             <p className="text-xs text-muted-foreground">
               {dirty
-                ? "Assay or spec edits are waiting. Press Solve plant to re-allocate each regional pool."
+                ? "Assay or spec edits are waiting. Press Solve plant to re-allocate each book."
                 : lastAction}
             </p>
           ) : null}

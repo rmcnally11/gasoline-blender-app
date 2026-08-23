@@ -2,41 +2,36 @@ import { aki } from "./math";
 import { optimizePlant } from "./optimize";
 import { componentsForRegion, regionLabel, tanksOnRegion } from "./regions";
 import { rvoCostPerFinishedBbl } from "./rvo";
-import type { Blendstock, NaphthaKind, NaphthaSeekResult, Plant, QualityDebit, RegionId, TankId } from "./types";
+import type {
+  Blendstock,
+  ComponentSeekResult,
+  NaphthaKind,
+  Plant,
+  QualityDebit,
+  RegionId,
+  TankId,
+} from "./types";
 
-function naphthaOf(plant: Plant, regionId: RegionId, kind: Exclude<NaphthaKind, null>): Blendstock | undefined {
-  return componentsForRegion(plant.components, regionId).find((component) => component.naphtha === kind);
-}
-
-function withNaphthaPrice(
-  plant: Plant,
-  regionId: RegionId,
-  kind: Exclude<NaphthaKind, null>,
-  price: number,
-  inventoryBbl: number,
-): Plant {
+function withComponentPrice(plant: Plant, componentId: string, price: number, inventoryBbl: number): Plant {
   return {
     ...plant,
     components: plant.components.map((component) =>
-      component.regionId === regionId && component.naphtha === kind
-        ? { ...component, enabled: true, costPerBbl: price, inventoryBbl, maxLiftBbl: inventoryBbl }
+      component.id === componentId
+        ? { ...component, enabled: true, costPerBbl: price, inventoryBbl, maxLiftBbl: Math.max(component.maxLiftBbl, inventoryBbl) }
         : component,
     ),
   };
 }
 
-function usedByTank(
+function usedOf(
   plant: Plant,
-  regionId: RegionId,
-  kind: Exclude<NaphthaKind, null>,
+  componentId: string,
 ): { total: number; destination: Partial<Record<TankId, number>> } {
-  const stream = naphthaOf(plant, regionId, kind);
-  if (!stream) return { total: 0, destination: {} };
   const solve = optimizePlant(plant);
   const destination: Partial<Record<TankId, number>> = {};
   let total = 0;
   for (const tank of solve.tanks) {
-    const used = tank.barrels[stream.id] ?? 0;
+    const used = tank.barrels[componentId] ?? 0;
     if (used > 0.05) {
       destination[tank.tankId] = used;
       total += used;
@@ -45,22 +40,22 @@ function usedByTank(
   return { total, destination };
 }
 
-export function impliedNaphthaValue(plant: Plant, regionId: RegionId, kind: Exclude<NaphthaKind, null>): number | null {
-  const stream = naphthaOf(plant, regionId, kind);
-  if (!stream) return null;
+export function impliedComponentValue(plant: Plant, regionId: RegionId, componentId: string): number | null {
+  const stream = plant.components.find((component) => component.id === componentId);
+  if (!stream || stream.regionId !== regionId) return null;
   if (tanksOnRegion(plant.tanks, regionId).filter((tank) => tank.enabled && tank.demandBbl > 0).length === 0) {
     return null;
   }
   let lo = 0;
-  let hi = 180;
+  let hi = 250;
   const inventory = Math.max(stream.inventoryBbl, 2500);
-  const cheap = withNaphthaPrice(plant, regionId, kind, lo, inventory);
-  if (usedByTank(cheap, regionId, kind).total < 0.5) return lo;
+  const cheap = withComponentPrice(plant, componentId, lo, inventory);
+  if (usedOf(cheap, componentId).total < 0.5) return lo;
 
   for (let i = 0; i < 18; i += 1) {
     const mid = (lo + hi) / 2;
-    const trial = withNaphthaPrice(plant, regionId, kind, mid, inventory);
-    if (usedByTank(trial, regionId, kind).total > 0.5) lo = mid;
+    const trial = withComponentPrice(plant, componentId, mid, inventory);
+    if (usedOf(trial, componentId).total > 0.5) lo = mid;
     else hi = mid;
   }
   return (lo + hi) / 2;
@@ -99,20 +94,20 @@ function qualityDebits(plant: Plant, regionId: RegionId, stream: Blendstock): Qu
       id: "sulfur",
       label: "Sulfur",
       amount: Math.max(0, stream.sulfurPpm - sulfurLimit) * 0.18,
-      note: `${stream.sulfurPpm.toFixed(0)} ppm vs ${sulfurLimit.toFixed(0)} ppm. High-S naphtha displaces clean blendstocks.`,
+      note: `${stream.sulfurPpm.toFixed(0)} ppm vs ${sulfurLimit.toFixed(0)} ppm versus the destination spec.`,
     },
     {
       id: "benzene",
       label: "Benzene",
       amount: Math.max(0, stream.benzeneVolPct - benzeneLimit) * 14,
-      note: `${stream.benzeneVolPct.toFixed(2)} vol% vs ${benzeneLimit.toFixed(2)} limit. Heavy naphtha is usually benzene-long.`,
+      note: `${stream.benzeneVolPct.toFixed(2)} vol% vs ${benzeneLimit.toFixed(2)} limit.`,
     },
     {
       id: "rvo",
       label: "RVO",
       amount: rvo,
       note: plant.rvo.enabled
-        ? `${(plant.rvo.obligationRate * 100).toFixed(1)}% obligation × $${plant.rvo.d6RinPrice.toFixed(2)} D6. Naphtha adds obligated gallons and no RINs.`
+        ? `${(plant.rvo.obligationRate * 100).toFixed(1)}% obligation × $${plant.rvo.d6RinPrice.toFixed(2)} D6. Hydrocarbon adds obligated gallons; ethanol credits RINs.`
         : "RVO is off.",
     },
     {
@@ -124,62 +119,98 @@ function qualityDebits(plant: Plant, regionId: RegionId, stream: Blendstock): Qu
   ];
 }
 
-export function seekNaphtha(
+function emptySeek(
+  regionId: RegionId,
+  stream: Blendstock | undefined,
+  offerPrice: number,
+  message: string,
+  debits: QualityDebit[] = [],
+): ComponentSeekResult {
+  return {
+    regionId,
+    componentId: stream?.id ?? "",
+    streamKey: stream?.streamKey ?? "lsr",
+    name: stream?.name ?? "Stream",
+    kind: stream?.naphtha ?? null,
+    offerPrice,
+    impliedValue: null,
+    clears: false,
+    usedBbl: 0,
+    destination: {},
+    debits,
+    message,
+  };
+}
+
+export function seekComponent(
   plant: Plant,
   regionId: RegionId,
-  kind: Exclude<NaphthaKind, null>,
+  componentId: string,
   offerPrice: number,
-): NaphthaSeekResult {
-  const stream = naphthaOf(plant, regionId, kind);
+): ComponentSeekResult {
+  const stream = plant.components.find((component) => component.id === componentId);
   const label = regionLabel(regionId);
-  if (!stream) {
-    return {
-      regionId,
-      kind,
-      offerPrice,
-      impliedValue: null,
-      clears: false,
-      usedBbl: 0,
-      destination: {},
-      debits: [],
-      message: `${label} has no ${kind} naphtha in its pool.`,
-    };
+  if (!stream || stream.regionId !== regionId) {
+    return emptySeek(regionId, stream, offerPrice, `${label} does not have that stream.`);
   }
 
   if (tanksOnRegion(plant.tanks, regionId).filter((tank) => tank.enabled && tank.demandBbl > 0).length === 0) {
-    return {
+    return emptySeek(
       regionId,
-      kind,
+      stream,
       offerPrice,
-      impliedValue: null,
-      clears: false,
-      usedBbl: 0,
-      destination: {},
-      debits: qualityDebits(plant, regionId, stream),
-      message: `No tank is on ${label}. Switch a tank slate to this region before goal-seeking.`,
-    };
+      `No destination tank is on ${label}. Point a tank slate at this market before valuing components.`,
+      qualityDebits(plant, regionId, stream),
+    );
   }
 
-  const impliedValue = impliedNaphthaValue(plant, regionId, kind);
-  const priced = withNaphthaPrice(plant, regionId, kind, offerPrice, Math.max(stream.inventoryBbl, 1));
-  const usage = usedByTank(priced, regionId, kind);
+  const impliedValue = impliedComponentValue(plant, regionId, componentId);
+  const priced = withComponentPrice(plant, componentId, offerPrice, Math.max(stream.inventoryBbl, 1));
+  const usage = usedOf(priced, componentId);
   const clears = impliedValue !== null && offerPrice <= impliedValue + 0.15 && usage.total > 0.05;
-  const debits = qualityDebits(plant, regionId, stream);
+  const offerGal = offerPrice / 42;
+  const impliedGal = impliedValue === null ? null : impliedValue / 42;
 
   return {
     regionId,
-    kind,
+    componentId: stream.id,
+    streamKey: stream.streamKey,
+    name: stream.name,
+    kind: stream.naphtha,
     offerPrice,
     impliedValue,
     clears,
     usedBbl: usage.total,
     destination: usage.destination,
-    debits,
+    debits: qualityDebits(plant, regionId, stream),
     message:
-      impliedValue === null
-        ? `Could not value ${label} ${kind} naphtha.`
+      impliedGal === null
+        ? `Could not value ${stream.name} into ${label}.`
         : clears
-          ? `Creates a ${label} domestic barrel. At $${offerPrice.toFixed(2)}/bbl the header takes ${usage.total.toFixed(0)} bbl into ${Object.keys(usage.destination).join(", ") || "the pool"}.`
-          : `Does not create a ${label} barrel at $${offerPrice.toFixed(2)}. Implied blend value is $${impliedValue.toFixed(2)}/bbl after sulfur, benzene, octane, DI, and RVO.`,
+          ? `Buys. At $${offerGal.toFixed(4)}/gal the header takes ${usage.total.toFixed(0)} bbl of ${stream.name} into ${Object.keys(usage.destination).join(", ") || "the lift"}. Implied value $${impliedGal.toFixed(4)}/gal.`
+          : `Does not buy at $${offerGal.toFixed(4)}/gal. Implied value versus the destination is $${impliedGal.toFixed(4)}/gal after quality, RVO, and freight.`,
   };
+}
+
+export function seekRegion(plant: Plant, regionId: RegionId): ComponentSeekResult[] {
+  return componentsForRegion(plant.components, regionId)
+    .filter((component) => component.enabled && component.streamKey !== "ethanol")
+    .map((component) => seekComponent(plant, regionId, component.id, component.costPerBbl));
+}
+
+function naphthaOf(plant: Plant, regionId: RegionId, kind: Exclude<NaphthaKind, null>): Blendstock | undefined {
+  return componentsForRegion(plant.components, regionId).find((component) => component.naphtha === kind);
+}
+
+export function seekNaphtha(
+  plant: Plant,
+  regionId: RegionId,
+  kind: Exclude<NaphthaKind, null>,
+  offerPrice: number,
+): ComponentSeekResult {
+  const stream = naphthaOf(plant, regionId, kind);
+  if (!stream) {
+    return emptySeek(regionId, undefined, offerPrice, `${regionLabel(regionId)} has no ${kind} naphtha in its pool.`);
+  }
+  return seekComponent(plant, regionId, stream.id, offerPrice);
 }

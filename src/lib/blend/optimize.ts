@@ -41,6 +41,7 @@ function emptySolve(plant: Plant, message: string, status: PlantSolve["status"])
     blendCost: null,
     revenue: null,
     rvoCost: null,
+    freightCost: null,
     margin: null,
   };
 }
@@ -202,7 +203,7 @@ export function optimizePlant(plant: Plant): PlantSolve {
   const ethanolCredit = rinCreditPerEthanolBbl(plant.rvo);
 
   const costs = vars.map(({ tank, component }) => {
-    let cost = component.costPerBbl - tank.rackPricePerBbl + rvoPerBbl;
+    let cost = component.costPerBbl - tank.rackPricePerBbl + tank.freightPerGal * 42 + rvoPerBbl;
     if (isEthanol(component)) cost -= ethanolCredit;
     return cost;
   });
@@ -302,11 +303,13 @@ export function optimizePlant(plant: Plant): PlantSolve {
 
   let blendCost = 0;
   let revenue = 0;
+  let freightCost = 0;
   let ethanolBbl = 0;
   let finishedBbl = 0;
   for (const tank of tanks) {
     finishedBbl += tank.demandBbl;
     revenue += tank.rackPricePerBbl * tank.demandBbl;
+    freightCost += tank.freightPerGal * 42 * tank.demandBbl;
     const pool = componentsForTank(plant.components, tank);
     for (const component of pool) {
       const used = recipe.barrels[tank.id][component.id] ?? 0;
@@ -317,14 +320,15 @@ export function optimizePlant(plant: Plant): PlantSolve {
   const rvoCost = rvoNetCost(plant.rvo, finishedBbl, ethanolBbl);
   return {
     status: "optimal",
-    message: "Minimum-cost allocation. Each tank draws only from its regional pool.",
+    message: "Minimum-cost allocation versus each tank’s destination marker, net of freight.",
     recipe,
     tanks: tankSolves,
     componentUsedBbl,
     blendCost,
     revenue,
     rvoCost,
-    margin: revenue - blendCost - rvoCost,
+    freightCost,
+    margin: revenue - blendCost - rvoCost - freightCost,
   };
 }
 

@@ -4,7 +4,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { componentsForRegion, regionLabel } from "@/lib/blend";
 import { MarketValues } from "./market-values";
-import { NaphthaPanel } from "./naphtha-panel";
 import { NumberField } from "./number-field";
 import { PoolCard } from "./pool-card";
 import { usePlant } from "./plant-context";
@@ -16,13 +15,8 @@ export function PlantDesk() {
     solve,
     activeRegion,
     setActiveRegion,
-    lightPrice,
-    heavyPrice,
-    lightResult,
-    heavyResult,
+    seeks,
     busy,
-    setLightPrice,
-    setHeavyPrice,
     runSeek,
     updateComponent,
     updateRvo,
@@ -77,10 +71,10 @@ export function PlantDesk() {
 
       <section className="space-y-3">
         <div className="space-y-1">
-          <h2 className="text-sm font-medium">Regional pools</h2>
+          <h2 className="text-sm font-medium">Destination markets</h2>
           <p className="text-xs text-muted-foreground">
-            Colonial, Explorer, West Coast, and Mexico each have their own barrels. A tank only
-            draws from the pool that matches its spec slate.
+            Colonial, Explorer, West Coast, and Mexico are separate books. A tank&apos;s spec
+            slate is the market you can ship into. Components are valued against that marker.
           </p>
         </div>
         <RegionSwitcher plant={plant} value={activeRegion} onChange={setActiveRegion} />
@@ -89,20 +83,10 @@ export function PlantDesk() {
       <MarketValues
         regionLabel={regionLabel(activeRegion)}
         components={componentsForRegion(plant.components, activeRegion)}
-        onPriceChange={(id, costPerBbl) => updateComponent(id, { costPerBbl })}
-      />
-
-      <NaphthaPanel
-        regionLabel={regionLabel(activeRegion)}
-        lightPrice={lightPrice}
-        heavyPrice={heavyPrice}
-        lightResult={lightResult}
-        heavyResult={heavyResult}
+        seeks={seeks}
         busy={busy === "seek"}
-        onPriceChange={(kind, price) => {
-          if (kind === "light") setLightPrice(price);
-          else setHeavyPrice(price);
-        }}
+        onPriceChange={(id, costPerBbl) => updateComponent(id, { costPerBbl })}
+        onMustUseChange={(id, minLiftBbl) => updateComponent(id, { minLiftBbl })}
         onSeek={runSeek}
       />
 

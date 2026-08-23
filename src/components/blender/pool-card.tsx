@@ -36,7 +36,7 @@ export function PoolCard({
           {tanks.length > 0
             ? `${names} ${tanks.length === 1 ? "draws" : "draw"} these barrels. Other regions cannot.`
             : "No tank is on this region yet. Switch a tank slate to use these barrels."}{" "}
-          Change a market price above or in the Market $/bbl column. Use the pencil for the assay.
+          Market prices are $/gal on the component book. Use the pencil for the assay.
         </CardDescription>
       </CardHeader>
       <CardContent>

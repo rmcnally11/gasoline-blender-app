@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { regionLabel, type Blendstock } from "@/lib/blend";
+import { perBblFromGal, perGalFromBbl, regionLabel, type Blendstock } from "@/lib/blend";
 import { NumberField } from "./number-field";
 
 const FIELDS: { key: keyof Blendstock; label: string; step: number; digits: number }[] = [
@@ -28,7 +28,7 @@ const FIELDS: { key: keyof Blendstock; label: string; step: number; digits: numb
   { key: "t90F", label: "T90, °F", step: 1, digits: 0 },
   { key: "e200VolPct", label: "E200, vol%", step: 0.5, digits: 1 },
   { key: "e300VolPct", label: "E300, vol%", step: 0.5, digits: 1 },
-  { key: "costPerBbl", label: "Market, $/bbl", step: 0.5, digits: 2 },
+  { key: "costPerBbl", label: "Market, $/gal", step: 0.0025, digits: 4 },
   { key: "inventoryBbl", label: "Inventory, bbl", step: 10, digits: 0 },
   { key: "maxLiftBbl", label: "Max lift, bbl", step: 10, digits: 0 },
   { key: "minLiftBbl", label: "Min lift, bbl", step: 10, digits: 0 },
@@ -64,10 +64,18 @@ export function AssayDialog({
               <label key={field.key} className="space-y-1">
                 <Label className="text-xs text-muted-foreground">{field.label}</Label>
                 <NumberField
-                  value={Number(component[field.key])}
+                  value={
+                    field.key === "costPerBbl"
+                      ? perGalFromBbl(component.costPerBbl)
+                      : Number(component[field.key])
+                  }
                   digits={field.digits}
                   step={field.step}
-                  onChange={(value) => onChange({ [field.key]: value })}
+                  onChange={(value) =>
+                    onChange({
+                      [field.key]: field.key === "costPerBbl" ? perBblFromGal(value) : value,
+                    })
+                  }
                 />
               </label>
             ))}

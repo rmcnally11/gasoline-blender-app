@@ -1,5 +1,5 @@
 import { createDefaultPlant, refreshTankSpecs } from "./defaults";
-import { seekNaphtha } from "./goalseek";
+import { seekNaphtha, seekRegion } from "./goalseek";
 import { optimizeBlendFromPlant, optimizePlant } from "./optimize";
 import { evaluateSpecs, predictProperties } from "./properties";
 import { componentsForTank, regionForSlate } from "./regions";
@@ -138,6 +138,10 @@ function checkNaphthaSeek() {
 
   const idleWest = seekNaphtha(plant, "west-coast", "light", 70);
   assert(idleWest.impliedValue === null, "West Coast seek needs a tank on SFPP");
+
+  const colonialBook = seekRegion(plant, "colonial");
+  const reformate = colonialBook.find((item) => item.streamKey === "reformate");
+  assert(reformate?.impliedValue !== null, "Colonial reformate should have an implied value");
 }
 
 checkSimplex();

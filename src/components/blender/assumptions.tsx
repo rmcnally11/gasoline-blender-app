@@ -4,10 +4,9 @@ export function Assumptions() {
       <div>
         <h3 className="mb-1 font-medium text-foreground">What this header is</h3>
         <p>
-          P1, P2, and P3 are finished-product tanks. Each spec slate belongs to a region —
-          Colonial, Explorer, West Coast, or Mexico — and each region has its own blend
-          pool. Tanks on the same region compete for those barrels. Tanks on different
-          regions do not.
+          P1, P2, and P3 are destination lifts. Each slate is a fungible or export market
+          with its own component book. Type markets in $/gal and value them against that
+          marker, net of freight and RVO.
         </p>
       </div>
       <div>

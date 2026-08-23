@@ -44,10 +44,10 @@ export function formatPerGal(value: number | null | undefined, digits = 4): stri
   return `$${formatNumber(value, digits)}/gal`;
 }
 
-export function dollarsPerBblToCentsPerGal(costPerBbl: number): number {
-  return (costPerBbl / 42) * 100;
+export function perGalFromBbl(dollarsPerBbl: number): number {
+  return dollarsPerBbl / 42;
 }
 
-export function centsPerGalToDollarsPerBbl(centsPerGal: number): number {
-  return (centsPerGal / 100) * 42;
+export function perBblFromGal(dollarsPerGal: number): number {
+  return dollarsPerGal * 42;
 }

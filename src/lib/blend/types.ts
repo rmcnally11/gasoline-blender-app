@@ -87,6 +87,8 @@ export interface ProductTank {
   heelBbl: number;
   demandBbl: number;
   rackPricePerBbl: number;
+  /** Pipeline tariff or export freight, dollars per finished gallon */
+  freightPerGal: number;
 }
 
 export interface RvoSettings {
@@ -178,6 +180,7 @@ export interface PlantSolve {
   blendCost: number | null;
   revenue: number | null;
   rvoCost: number | null;
+  freightCost: number | null;
   margin: number | null;
 }
 
@@ -188,9 +191,13 @@ export interface QualityDebit {
   note: string;
 }
 
-export interface NaphthaSeekResult {
+export interface ComponentSeekResult {
   regionId: RegionId;
-  kind: Exclude<NaphthaKind, null>;
+  componentId: string;
+  streamKey: StreamKey;
+  name: string;
+  kind: Exclude<NaphthaKind, null> | null;
+  /** Offer and implied value are dollars per barrel internally */
   offerPrice: number;
   impliedValue: number | null;
   clears: boolean;
@@ -199,3 +206,5 @@ export interface NaphthaSeekResult {
   debits: QualityDebit[];
   message: string;
 }
+
+export type NaphthaSeekResult = ComponentSeekResult;

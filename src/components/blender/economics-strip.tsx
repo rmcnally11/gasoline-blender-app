@@ -6,31 +6,33 @@ import { usePlant } from "./plant-context";
 export function EconomicsStrip() {
   const { solve, solverStatus, finishedBbl } = usePlant();
   const gallons = finishedBbl * 42;
-  const revenue = perGallon(solve.revenue, finishedBbl);
+  const marker = perGallon(solve.revenue, finishedBbl);
   const blend = perGallon(solve.blendCost, finishedBbl);
   const rvo = perGallon(solve.rvoCost, finishedBbl);
+  const freight = perGallon(solve.freightCost, finishedBbl);
   const margin = perGallon(solve.margin, finishedBbl);
 
   return (
     <section className="rounded-xl border border-border bg-card/80 p-3">
       <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h2 className="text-sm font-medium">Plant economics</h2>
+          <h2 className="text-sm font-medium">Netback versus destination</h2>
           <p className="text-xs text-muted-foreground">
             {solverStatus === "optimal"
-              ? `Rack, blend, RVO, and margin on ${formatNumber(gallons, 0)} finished gallons.`
-              : "Press Solve plant. Totals show as dollars per finished gallon, not a notional header."}
+              ? `Marker, components, RVO, and freight on ${formatNumber(gallons, 0)} finished gallons.`
+              : "Press Solve plant. Everything here is dollars per finished gallon."}
           </p>
         </div>
       </div>
-      <dl className="grid grid-cols-2 gap-2 md:grid-cols-4">
-        <Metric label="Rack" value={formatPerGal(revenue)} hint="Weighted tank rack" />
-        <Metric label="Blend cost" value={formatPerGal(blend)} hint="Regional pools into the three tanks" />
+      <dl className="grid grid-cols-2 gap-2 md:grid-cols-5">
+        <Metric label="Marker" value={formatPerGal(marker)} hint="Fungible / export" />
+        <Metric label="Components" value={formatPerGal(blend)} hint="Market cost into the lift" />
         <Metric label="RVO net" value={formatPerGal(rvo)} hint="Obligation − ethanol RINs" />
+        <Metric label="Freight" value={formatPerGal(freight)} hint="Pipeline tariff or export" />
         <Metric
-          label="Margin"
+          label="Net"
           value={formatPerGal(margin)}
-          hint={margin !== null && margin >= 0 ? "Over rack after RVO" : "Under rack"}
+          hint={margin !== null && margin >= 0 ? "Beats buying the barrel" : "Worse than the marker"}
           tone={margin === null ? "muted" : margin >= 0 ? "good" : "bad"}
         />
       </dl>

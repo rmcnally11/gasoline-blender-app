@@ -7,7 +7,7 @@ export default function P2Page() {
   return (
     <AppShell
       title="P2"
-      subtitle="Finished-product tank. Defaults to Explorer, so it has its own Midwest pool. Switching the slate moves this tank onto another region's barrels."
+      subtitle="Explorer destination by default. Marker and freight are $/gal. Switching the slate moves this lift onto another market’s barrels."
     >
       <TankPage tankId="P2" />
     </AppShell>

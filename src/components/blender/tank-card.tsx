@@ -94,11 +94,31 @@ export function TankCard({
         </div>
         <div className="grid grid-cols-2 gap-3">
           <label className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Blend demand, bbl</Label>
+            <Label className="text-xs text-muted-foreground">Destination marker, $/gal</Label>
+            <NumberField
+              value={tank.rackPricePerBbl / 42}
+              digits={4}
+              step={0.0025}
+              min={0}
+              onChange={(value) => onChange({ rackPricePerBbl: value * 42 })}
+            />
+          </label>
+          <label className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Freight / tariff, $/gal</Label>
+            <NumberField
+              value={tank.freightPerGal}
+              digits={4}
+              step={0.0025}
+              min={0}
+              onChange={(value) => onChange({ freightPerGal: value })}
+            />
+          </label>
+          <label className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Ship volume, bbl</Label>
             <NumberField value={tank.demandBbl} digits={0} step={50} min={0} onChange={(value) => onChange({ demandBbl: value })} />
           </label>
           <label className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Tank inventory, bbl</Label>
+            <Label className="text-xs text-muted-foreground">Finished inventory, bbl</Label>
             <NumberField value={tank.inventoryBbl} digits={0} step={50} min={0} onChange={(value) => onChange({ inventoryBbl: value })} />
           </label>
           <label className="space-y-1">

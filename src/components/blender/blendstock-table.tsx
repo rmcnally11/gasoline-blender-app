@@ -2,8 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import type { Blendstock } from "@/lib/blend";
-import { formatNumber } from "@/lib/blend";
+import { formatNumber, perBblFromGal, perGalFromBbl, type Blendstock } from "@/lib/blend";
 import { Pencil } from "lucide-react";
 import { NumberField } from "./number-field";
 
@@ -28,7 +27,7 @@ export function BlendstockTable({
             <th className="pb-2 text-right font-medium">Inv bbl</th>
             <th className="pb-2 text-right font-medium">Used</th>
             <th className="pb-2 text-right font-medium">Left</th>
-            <th className="pb-2 text-right font-medium">Market $/bbl</th>
+            <th className="pb-2 text-right font-medium">Market $/gal</th>
             <th className="pb-2 text-right font-medium">AKI</th>
             <th className="pb-2 text-right font-medium">RVP</th>
             <th className="pb-2 text-right font-medium">S</th>
@@ -87,12 +86,12 @@ export function BlendstockTable({
                 <td className="py-2 text-right font-mono tabular-nums">{formatNumber(left, 0)}</td>
                 <td className="py-2 pl-2">
                   <NumberField
-                    aria-label={`${component.name} market dollars per barrel`}
+                    aria-label={`${component.name} market dollars per gallon`}
                     className="ml-auto w-16"
-                    value={component.costPerBbl}
-                    step={0.5}
-                    digits={2}
-                    onChange={(value) => onComponentChange(component.id, { costPerBbl: value })}
+                    value={perGalFromBbl(component.costPerBbl)}
+                    step={0.0025}
+                    digits={4}
+                    onChange={(value) => onComponentChange(component.id, { costPerBbl: perBblFromGal(value) })}
                   />
                 </td>
                 <td className="py-2 text-right font-mono tabular-nums">

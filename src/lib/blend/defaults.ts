@@ -1,6 +1,6 @@
 import { regionForSlate } from "./regions";
 import { DEFAULT_RVO } from "./rvo";
-import { buildSpecs, defaultEthanolMode, GRADE_OPTIONS, rackPricePerBbl } from "./specs";
+import { buildSpecs, defaultEthanolMode, freightPerGalFor, GRADE_OPTIONS, rackPricePerBbl } from "./specs";
 import type { Blendstock, Plant, ProductTank, RegionId, SlateId, StreamKey, TankId } from "./types";
 
 type StreamBase = Omit<Blendstock, "id" | "regionId">;
@@ -519,6 +519,7 @@ function makeTank(
     heelBbl: 400,
     demandBbl,
     rackPricePerBbl: rackPricePerBbl(gradeId, slateId),
+    freightPerGal: freightPerGalFor(slateId),
   };
 }
 
@@ -540,7 +541,6 @@ export function refreshTankSpecs(tank: ProductTank, complianceOverlay: boolean):
   return {
     ...tank,
     specs: buildSpecs(tank.slateId, tank.gradeId, tank.seasonId, tank.ethanolMode, complianceOverlay),
-    rackPricePerBbl: rackPricePerBbl(tank.gradeId, tank.slateId),
     rvpWaiver: tank.slateId === "cpl-cbob" || tank.slateId === "explorer-cbob" ? tank.rvpWaiver : false,
   };
 }

@@ -43,6 +43,20 @@ export function rackPricePerBbl(gradeId: GradeId, slateId: SlateId): number {
   return perGal * GALLONS_PER_BBL;
 }
 
+export function freightPerGalFor(slateId: SlateId): number {
+  switch (slateId) {
+    case "cpl-cbob":
+      return 0.04;
+    case "explorer-cbob":
+      return 0.045;
+    case "sfpp-carbob":
+      return 0.06;
+    case "mexico-zmvm":
+    case "mexico-resto":
+      return 0.1;
+  }
+}
+
 function distillationForSeason(seasonId: SeasonId): Pick<
   ProductSpecs,
   "t10MaxF" | "t50MinF" | "t50MaxF" | "t90MaxF" | "e200MinVolPct" | "e300MinVolPct" | "diMax"

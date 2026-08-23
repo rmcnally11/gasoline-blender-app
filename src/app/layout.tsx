@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Gasoline blender",
   description:
-    "Three-tank gasoline blend header with a separate blend pool for each region.",
+    "Gulf Coast component valuation: price naphtha and blendstocks in $/gal against fungible and export destinations.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
