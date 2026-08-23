@@ -70,6 +70,11 @@ export const GLOSSARY = {
     short: "Implied is more than the lift cut below book, or the only price is a toy default.",
     long: "The recipe may still take barrels (must-use, octane need). The call is the bid screen, not a hard LP block. Fix the book or pass on the stream.",
   },
+  leftover: {
+    term: "Enabled, zero barrels in the recipe",
+    short: "Use is on and you have inventory, but Solve took 0 bbl. Sitting in the pool, not in the lift.",
+    long: "Not a LIFT call. LIFT / DON’T LIFT is only for streams the recipe actually used. This list is leftover inventory the header did not buy — too expensive, wrong quality, or the tanks were already full of cheaper barrels.",
+  },
   ethanolMode: {
     term: "Ethanol",
     short: "E0 = no ethanol. E10 = lock 10 vol%. Flex = 0–10%.",

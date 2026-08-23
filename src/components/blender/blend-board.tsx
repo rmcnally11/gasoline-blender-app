@@ -50,7 +50,12 @@ export function BlendBoard() {
 
             {board.leftover.length > 0 ? (
               <section className="space-y-2">
-                <h3 className="text-sm font-medium">In the book, not taken</h3>
+                <h3 className="text-sm font-medium">Enabled, zero barrels in the recipe</h3>
+                <p className="text-xs text-muted-foreground">
+                  Use is on and you have inventory. Solve put none of it into P1 / P2 / P3 — the
+                  header did not need it (or the book was too dear). Not the same as DON&apos;T LIFT
+                  on a stream that did get lifted.
+                </p>
                 <ul className="space-y-1 text-xs text-muted-foreground">
                   {board.leftover.map((row) => (
                     <li key={row.id} className="flex flex-wrap items-baseline gap-x-2">
