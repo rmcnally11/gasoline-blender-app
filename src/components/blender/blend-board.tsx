@@ -42,34 +42,11 @@ export function BlendBoard() {
               <p className="text-xs text-muted-foreground">Binding: {board.message}</p>
             </section>
 
-            <RecipeTable streams={board.streams} />
+            <RecipeTable streams={board.streams} leftover={board.leftover} />
 
             {board.dollars ? <DollarStack dollars={board.dollars} /> : null}
 
             <QualityTable rows={board.quality} />
-
-            {board.leftover.length > 0 ? (
-              <section className="space-y-2">
-                <h3 className="text-sm font-medium">Enabled, zero barrels in the recipe</h3>
-                <p className="text-xs text-muted-foreground">
-                  Use is on and you have inventory. Solve put none of it into P1 / P2 / P3 — the
-                  header did not need it (or the book was too dear). Not the same as DON&apos;T LIFT
-                  on a stream that did get lifted.
-                </p>
-                <ul className="space-y-1 text-xs text-muted-foreground">
-                  {board.leftover.map((row) => (
-                    <li key={row.id} className="flex flex-wrap items-baseline gap-x-2">
-                      <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: row.color }} />
-                      <span className="text-foreground">{row.name}</span>
-                      <span className="font-mono tabular-nums">
-                        {formatNumber(row.inventoryBbl, 0)} bbl left · {formatMoney(row.bookPerBbl, 3)}/bbl
-                      </span>
-                      {row.priceStale ? <span className="text-rose-700">stale</span> : null}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ) : null}
           </>
         ) : null}
       </CardContent>
@@ -77,42 +54,26 @@ export function BlendBoard() {
   );
 }
 
-function RecipeTable({ streams }: { streams: BlendBoardStream[] }) {
-  if (streams.length === 0) {
+function RecipeTable({
+  streams,
+  leftover,
+}: {
+  streams: BlendBoardStream[];
+  leftover: BlendBoardStream[];
+}) {
+  const rows = [...streams, ...leftover];
+  if (rows.length === 0) {
     return <p className="text-xs text-muted-foreground">No components taken.</p>;
   }
   return (
     <section className="space-y-2">
       <h3 className="text-sm font-medium">Barrels into the tanks</h3>
+      <p className="text-xs text-muted-foreground">
+        Used first. Rows at 0 bbl are on and have inventory — Solve left them in the tank.
+      </p>
       <div className="space-y-2 md:hidden">
-        {streams.map((row) => (
-          <article key={row.id} className="space-y-2 rounded-xl border border-border/80 p-3">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="font-medium">{row.name}</p>
-                <p className="text-[11px] text-muted-foreground">
-                  {row.streamKey} · {formatPct(row.volPct)} of new barrels
-                  {row.priceStale ? " · stale" : ""}
-                </p>
-              </div>
-              {row.call ? (
-                row.call === "LIFT" ? (
-                  <Badge className="bg-teal-500/15 text-teal-800">LIFT</Badge>
-                ) : (
-                  <Badge variant="destructive">DON&apos;T LIFT</Badge>
-                )
-              ) : null}
-            </div>
-            <dl className="grid grid-cols-3 gap-2 text-xs">
-              <Cell label="P1" value={formatNumber(row.into.P1, 0)} />
-              <Cell label="P2" value={formatNumber(row.into.P2, 0)} />
-              <Cell label="P3" value={formatNumber(row.into.P3, 0)} />
-              <Cell label="Total" value={formatNumber(row.barrels, 0)} />
-              <Cell label="Left" value={formatNumber(row.leftBbl, 0)} />
-              <Cell label="Book" value={formatMoney(row.bookPerBbl, 2)} />
-            </dl>
-            <InventoryBar used={row.barrels} inventory={row.inventoryBbl} />
-          </article>
+        {rows.map((row) => (
+          <StreamCard key={row.id} row={row} unused={row.barrels <= 1e-6} />
         ))}
       </div>
       <div className="hidden overflow-x-auto md:block">
@@ -143,42 +104,45 @@ function RecipeTable({ streams }: { streams: BlendBoardStream[] }) {
             </tr>
           </thead>
           <tbody>
-            {streams.map((row) => (
-              <tr key={row.id} className="border-t border-border/70">
-                <td className="py-1.5 pr-2">
-                  <p className="flex items-center gap-1.5 font-medium">
-                    <span className="size-2 rounded-full" style={{ backgroundColor: row.color }} />
-                    {row.name}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {row.streamKey}
-                    {row.priceStale ? " · stale" : ""}
-                  </p>
-                </td>
-                <td className="py-1.5 pr-2 text-right font-mono tabular-nums">{formatNumber(row.into.P1, 0)}</td>
-                <td className="py-1.5 pr-2 text-right font-mono tabular-nums">{formatNumber(row.into.P2, 0)}</td>
-                <td className="py-1.5 pr-2 text-right font-mono tabular-nums">{formatNumber(row.into.P3, 0)}</td>
-                <td className="py-1.5 pr-2 text-right font-mono tabular-nums">{formatNumber(row.barrels, 0)}</td>
-                <td className="py-1.5 pr-2 text-right font-mono tabular-nums">{formatPct(row.volPct)}</td>
-                <td className="py-1.5 pr-2 text-right font-mono tabular-nums">{formatNumber(row.leftBbl, 0)}</td>
-                <td className="py-1.5 pr-2">
-                  <InventoryBar used={row.barrels} inventory={row.inventoryBbl} />
-                </td>
-                <td className="py-1.5 pr-2 text-right font-mono tabular-nums">{formatMoney(row.bookPerBbl, 3)}</td>
-                <td className="py-1.5 pr-2 text-right font-mono tabular-nums">
-                  {row.impliedPerBbl === null ? "…" : formatMoney(row.impliedPerBbl, 3)}
-                </td>
-                <td className="py-1.5">
-                  {row.call === "LIFT" ? (
-                    <Badge className="bg-teal-500/15 text-teal-800">LIFT</Badge>
-                  ) : row.call === "DON'T LIFT" ? (
-                    <Badge variant="destructive">DON&apos;T LIFT</Badge>
-                  ) : (
-                    "—"
-                  )}
-                </td>
-              </tr>
-            ))}
+            {rows.map((row) => {
+              const unused = row.barrels <= 1e-6;
+              return (
+                <tr
+                  key={row.id}
+                  className={`border-t border-border/70 ${unused ? "text-muted-foreground" : ""}`}
+                >
+                  <td className="py-1.5 pr-2">
+                    <p className={`flex items-center gap-1.5 ${unused ? "" : "font-medium text-foreground"}`}>
+                      <span className="size-2 rounded-full" style={{ backgroundColor: row.color }} />
+                      {row.name}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {row.streamKey}
+                      {row.priceStale ? " · stale" : ""}
+                      {unused ? " · 0 in the recipe" : ""}
+                    </p>
+                  </td>
+                  <td className="py-1.5 pr-2 text-right font-mono tabular-nums">{formatNumber(row.into.P1, 0)}</td>
+                  <td className="py-1.5 pr-2 text-right font-mono tabular-nums">{formatNumber(row.into.P2, 0)}</td>
+                  <td className="py-1.5 pr-2 text-right font-mono tabular-nums">{formatNumber(row.into.P3, 0)}</td>
+                  <td className="py-1.5 pr-2 text-right font-mono tabular-nums">{formatNumber(row.barrels, 0)}</td>
+                  <td className="py-1.5 pr-2 text-right font-mono tabular-nums">
+                    {unused ? "—" : formatPct(row.volPct)}
+                  </td>
+                  <td className="py-1.5 pr-2 text-right font-mono tabular-nums">{formatNumber(row.leftBbl, 0)}</td>
+                  <td className="py-1.5 pr-2">
+                    <InventoryBar used={row.barrels} inventory={row.inventoryBbl} />
+                  </td>
+                  <td className="py-1.5 pr-2 text-right font-mono tabular-nums">{formatMoney(row.bookPerBbl, 3)}</td>
+                  <td className="py-1.5 pr-2 text-right font-mono tabular-nums">
+                    {unused ? "—" : row.impliedPerBbl === null ? "…" : formatMoney(row.impliedPerBbl, 3)}
+                  </td>
+                  <td className="py-1.5">
+                    <CallBadge row={row} unused={unused} />
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -303,6 +267,46 @@ function DollarStack({
       </dl>
     </section>
   );
+}
+
+function StreamCard({ row, unused }: { row: BlendBoardStream; unused: boolean }) {
+  return (
+    <article className={`space-y-2 rounded-xl border border-border/80 p-3 ${unused ? "opacity-80" : ""}`}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="font-medium">{row.name}</p>
+          <p className="text-[11px] text-muted-foreground">
+            {row.streamKey}
+            {unused ? " · 0 in the recipe" : ` · ${formatPct(row.volPct)} of new barrels`}
+            {row.priceStale ? " · stale" : ""}
+          </p>
+        </div>
+        <CallBadge row={row} unused={unused} />
+      </div>
+      <dl className="grid grid-cols-3 gap-2 text-xs">
+        <Cell label="P1" value={formatNumber(row.into.P1, 0)} />
+        <Cell label="P2" value={formatNumber(row.into.P2, 0)} />
+        <Cell label="P3" value={formatNumber(row.into.P3, 0)} />
+        <Cell label="Total" value={formatNumber(row.barrels, 0)} />
+        <Cell label="Left" value={formatNumber(row.leftBbl, 0)} />
+        <Cell label="Book" value={formatMoney(row.bookPerBbl, 2)} />
+      </dl>
+      <InventoryBar used={row.barrels} inventory={row.inventoryBbl} />
+    </article>
+  );
+}
+
+function CallBadge({ row, unused }: { row: BlendBoardStream; unused: boolean }) {
+  if (unused) {
+    return (
+      <TermTip term="leftover">
+        <Badge variant="outline">Not used</Badge>
+      </TermTip>
+    );
+  }
+  if (row.call === "LIFT") return <Badge className="bg-teal-500/15 text-teal-800">LIFT</Badge>;
+  if (row.call === "DON'T LIFT") return <Badge variant="destructive">DON&apos;T LIFT</Badge>;
+  return <span className="text-muted-foreground">—</span>;
 }
 
 function InventoryBar({ used, inventory }: { used: number; inventory: number }) {

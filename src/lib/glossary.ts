@@ -72,8 +72,8 @@ export const GLOSSARY = {
   },
   leftover: {
     term: "Enabled, zero barrels in the recipe",
-    short: "Use is on and you have inventory, but Solve took 0 bbl. Sitting in the pool, not in the lift.",
-    long: "Not a LIFT call. LIFT / DON’T LIFT is only for streams the recipe actually used. This list is leftover inventory the header did not buy — too expensive, wrong quality, or the tanks were already full of cheaper barrels.",
+    short: "Same barrels table, 0 in P1/P2/P3. Use is on and inventory is sitting. Not a LIFT call.",
+    long: "LIFT / DON’T LIFT is only for streams the recipe used. A Not used row means the header left the inventory in the tank — too dear, wrong quality, or the lift was already full of cheaper barrels.",
   },
   ethanolMode: {
     term: "Ethanol",
