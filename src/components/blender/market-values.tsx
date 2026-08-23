@@ -16,7 +16,7 @@ import { NumberField } from "./number-field";
 export function MarketValues({
   regionLabel,
   components,
-  seeks,
+  seeks = {},
   busy = false,
   onPriceChange,
   onMustUseChange,
@@ -56,7 +56,7 @@ export function MarketValues({
           <span className="text-right">Bid</span>
         </div>
         {components.map((component) => {
-          const seek = seeks[component.id];
+          const seek = seeks?.[component.id];
           const marketGal = perGalFromBbl(component.costPerBbl);
           const impliedGal = seek?.impliedValue == null ? null : perGalFromBbl(seek.impliedValue);
           const locked = component.streamKey === "ethanol";
