@@ -44,17 +44,9 @@ export function PlantDesk() {
 
   return (
     <MobileWorkspace
+      forceTabs
       storageKey="plant"
       defaultSection="pnl"
-      desktop={
-        <>
-          {destinations}
-          <MarksCompare />
-          <BlendBoard />
-          <MoneyScreen />
-          {seek}
-        </>
-      }
       sections={[
         {
           id: "pnl",

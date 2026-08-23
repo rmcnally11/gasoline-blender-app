@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { blendBoard, type BlendBoardStream } from "@/lib/blend/blend-board";
 import { formatMoney, formatNumber, formatPct, formatSigned } from "@/lib/blend";
-import { RecipeBar } from "./recipe-bar";
+import { BlendCharts } from "./blend-charts";
 import { TermTip } from "./term-tip";
 import { usePlant } from "./plant-context";
 
@@ -17,10 +17,10 @@ export function BlendBoard() {
   return (
     <Card size="sm">
       <CardHeader className="border-b">
-        <CardTitle>The blend</CardTitle>
+        <CardTitle>Blend charts</CardTitle>
         <CardDescription>
-          Same frozen barrels as P&amp;L. What went into P1 / P2 / P3, how close to the money specs,
-          and where the dollars went. Not a second optimize.
+          Same frozen barrels as P&amp;L. Mix, tank stack, book vs implied, and the dollar stack.
+          Tables sit under the charts. Not a second optimize.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -33,18 +33,9 @@ export function BlendBoard() {
 
         {board.ready ? (
           <>
-            <section className="space-y-2">
-              <h3 className="text-sm font-medium">Plant recipe</h3>
-              <RecipeBar
-                components={plant.components}
-                recipe={{ volumes: board.recipeVolumes }}
-              />
-              <p className="text-xs text-muted-foreground">Binding: {board.message}</p>
-            </section>
-
+            <BlendCharts board={board} />
+            <p className="text-xs text-muted-foreground">Binding: {board.message}</p>
             <RecipeTable streams={board.streams} leftover={board.leftover} />
-
-            {board.dollars ? <DollarStack dollars={board.dollars} /> : null}
 
             <QualityTable rows={board.quality} />
           </>
@@ -213,58 +204,6 @@ function QualityTable({ rows }: { rows: ReturnType<typeof blendBoard>["quality"]
           </tbody>
         </table>
       </div>
-    </section>
-  );
-}
-
-function DollarStack({
-  dollars,
-}: {
-  dollars: NonNullable<ReturnType<typeof blendBoard>["dollars"]>;
-}) {
-  const scale = Math.max(dollars.revenue, dollars.blendCost + dollars.rvoNet + dollars.freight, 1);
-  const rows = [
-    { id: "rev", label: "Revenue", value: dollars.revenue, tone: "in" as const },
-    { id: "blend", label: "Blend cost", value: dollars.blendCost, tone: "out" as const },
-    { id: "rvo", label: "RVO net", value: dollars.rvoNet, tone: "out" as const },
-    { id: "freight", label: "Freight", value: dollars.freight, tone: "out" as const },
-    { id: "margin", label: "Margin", value: dollars.margin, tone: "net" as const },
-  ];
-  return (
-    <section className="space-y-2">
-      <h3 className="text-sm font-medium">Dollar stack</h3>
-      <p className="text-xs text-muted-foreground">
-        Marker minus book minus RVO minus freight on {formatNumber(dollars.finishedBbl, 0)} finished
-        barrels. Same math as P&amp;L.
-      </p>
-      <dl className="space-y-2">
-        {rows.map((row) => (
-          <div key={row.id} className="grid grid-cols-[6.5rem_minmax(0,1fr)_7rem] items-center gap-2 text-xs">
-            <dt className="text-muted-foreground">{row.label}</dt>
-            <dd className="h-3 overflow-hidden rounded bg-muted/60">
-              <div
-                className={
-                  row.tone === "in"
-                    ? "h-full bg-sky-700/70"
-                    : row.tone === "net"
-                      ? dollars.margin >= 0
-                        ? "h-full bg-teal-700/70"
-                        : "h-full bg-red-700/70"
-                      : "h-full bg-foreground/25"
-                }
-                style={{ width: `${Math.min(100, (Math.abs(row.value) / scale) * 100)}%` }}
-              />
-            </dd>
-            <p
-              className={`text-right font-mono tabular-nums ${
-                row.tone === "net" ? (dollars.margin >= 0 ? "text-teal-800" : "text-red-700") : ""
-              }`}
-            >
-              {formatMoney(row.value, 0)}
-            </p>
-          </div>
-        ))}
-      </dl>
     </section>
   );
 }
