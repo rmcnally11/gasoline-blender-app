@@ -56,7 +56,7 @@ export function TankCard({
           <div className="flex items-center gap-2">
             {failed.length > 0 ? <Badge variant="destructive">Off spec</Badge> : null}
             {failed.length === 0 && binding.length > 0 ? (
-              <Badge className="bg-amber-500/15 text-amber-200">Binding</Badge>
+              <Badge className="bg-amber-500/15 text-amber-800">Binding</Badge>
             ) : null}
             <Switch checked={tank.enabled} onCheckedChange={(checked) => onChange({ enabled: checked })} aria-label={`Enable ${tank.id}`} />
           </div>

@@ -79,7 +79,7 @@ function SeekColumn({
         </div>
         {result ? (
           result.clears ? (
-            <Badge className="bg-emerald-500/15 text-emerald-300">Creates a barrel</Badge>
+            <Badge className="bg-emerald-500/15 text-emerald-800">Creates a barrel</Badge>
           ) : (
             <Badge variant="destructive">Does not clear</Badge>
           )

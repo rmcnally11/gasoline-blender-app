@@ -102,6 +102,6 @@ export function SpecSheet({
 function SpecBadge({ check }: { check: SpecCheck }) {
   if (check.status === "idle") return <Badge variant="outline">Waiting</Badge>;
   if (check.status === "fail") return <Badge variant="destructive">Off spec</Badge>;
-  if (check.binding) return <Badge className="bg-amber-500/15 text-amber-200">Binding</Badge>;
-  return <Badge className="bg-emerald-500/15 text-emerald-300">On spec</Badge>;
+  if (check.binding) return <Badge className="bg-amber-500/15 text-amber-800">Binding</Badge>;
+  return <Badge className="bg-emerald-500/15 text-emerald-800">On spec</Badge>;
 }

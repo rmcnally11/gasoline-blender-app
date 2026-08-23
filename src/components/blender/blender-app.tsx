@@ -121,13 +121,13 @@ export function BlenderApp() {
   }
 
   return (
-    <div className="min-h-full bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.08),_transparent_42%)]">
-      <header className="border-b border-border/80 bg-background/85 backdrop-blur">
+    <div className="min-h-full bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.16),_transparent_46%)]">
+      <header className="border-b border-border/80 bg-background/80 backdrop-blur">
         <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-4 px-4 py-4 md:px-6">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-[11px] font-medium tracking-[0.18em] text-amber-400 uppercase">
+                <p className="text-[11px] font-medium tracking-[0.18em] text-amber-800 uppercase">
                   Blend header
                 </p>
                 <Badge variant="outline">P1 · P2 · P3</Badge>
