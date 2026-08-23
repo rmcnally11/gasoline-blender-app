@@ -75,7 +75,11 @@ export function AppShell({
         </div>
       </div>
 
-      <header className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-3 md:px-6 md:py-4">
+      <header
+        className={`mx-auto w-full max-w-6xl flex-col gap-3 px-4 py-3 md:px-6 md:py-4 ${
+          onManual ? "flex" : "hidden md:flex md:flex-col"
+        }`}
+      >
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="text-xl font-semibold tracking-tight md:text-3xl">{title}</h1>
@@ -125,7 +129,18 @@ export function AppShell({
             </AlertDescription>
           </Alert>
         ) : null}
-        {onManual || !showEconomics ? null : <EconomicsStrip />}
+        {onManual || !showEconomics ? null : (
+          <div className="hidden md:block">
+            <EconomicsStrip />
+          </div>
+        )}
+        {onManual || (!lastAction && !dirty) ? null : (
+          <p className="text-xs text-muted-foreground md:hidden">
+            {dirty
+              ? "Assay or spec edits are waiting. Press Solve to re-allocate."
+              : lastAction}
+          </p>
+        )}
         {children}
       </main>
 

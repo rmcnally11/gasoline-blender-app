@@ -33,6 +33,7 @@ export function TankCard({
   complianceOverlay,
   onChange,
   onSpecChange,
+  view = "full",
 }: {
   tank: ProductTank;
   components: import("@/lib/blend").Blendstock[];
@@ -40,6 +41,7 @@ export function TankCard({
   complianceOverlay: boolean;
   onChange: (patch: Partial<ProductTank>) => void;
   onSpecChange: (patch: Partial<ProductSpecs>) => void;
+  view?: "full" | "setup" | "specs";
 }) {
   const tankSolve = solve.tanks.find((item) => item.tankId === tank.id);
   const checks = evaluateSpecs(tank, tankSolve?.properties ?? null);
@@ -78,6 +80,8 @@ export function TankCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {view === "specs" ? null : (
+        <>
         <div className="grid gap-3 sm:grid-cols-2">
           <FieldSelect
             label="Grade"
@@ -248,6 +252,9 @@ export function TankCard({
           {formatNumber(Math.max(0, tank.demandBbl - tank.heelBbl), 0)} · capacity{" "}
           {formatNumber(tank.capacityBbl, 0)} bbl. Ship volume is the mixed tank.
         </p>
+        </>
+        )}
+        {view === "setup" ? null : (
         <SpecSheet
           checks={checks}
           specs={tank.specs}
@@ -255,6 +262,7 @@ export function TankCard({
           rvpNote={rvpNote}
           overlayOn={complianceOverlay}
         />
+        )}
       </CardContent>
     </Card>
   );

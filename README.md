@@ -29,7 +29,7 @@ npm run dev
 
 Open [http://127.0.0.1:43180](http://127.0.0.1:43180).
 
-On a phone the same pages stack into cards, with a sticky nav and a Solve bar at the bottom. From 768px up the desk is unchanged.
+On a phone the same pages stack into cards. A second tab row jumps to Money / Book / Markets / Pool (or Lift / Specs / Book / Pool on a tank) so you do not scroll the whole desk. Solve stays at the bottom. From 768px up the desk is unchanged.
 
 Production is the existing Vercel project `gasoline_blender_2.0`:
 [https://gasolineblender20-bobby-204e.vercel.app](https://gasolineblender20-bobby-204e.vercel.app).
