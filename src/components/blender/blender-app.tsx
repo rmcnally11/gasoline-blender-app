@@ -314,9 +314,9 @@ function Metric({
 }) {
   const hintClass = {
     muted: "text-muted-foreground",
-    good: "text-emerald-300",
-    bad: "text-red-300",
-    warn: "text-amber-300",
+    good: "text-emerald-800",
+    bad: "text-red-700",
+    warn: "text-amber-800",
   }[tone];
   return (
     <div className="rounded-lg bg-muted/40 px-3 py-2">
