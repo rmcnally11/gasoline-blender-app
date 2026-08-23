@@ -51,7 +51,7 @@ export function BlendstockTable({
                       <div className="font-medium">
                         {component.name}
                         {component.naphtha ? (
-                          <span className="ml-2 text-[11px] font-normal text-amber-300">
+                          <span className="ml-2 text-[11px] font-normal text-amber-800">
                             {component.naphtha} naphtha
                           </span>
                         ) : null}
