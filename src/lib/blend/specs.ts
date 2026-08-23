@@ -38,6 +38,7 @@ export function isExportSlate(slateId: SlateId): boolean {
   return slateId === "mexico-zmvm" || slateId === "mexico-resto";
 }
 
+/** Last-typed placeholder only. Do not label this as a Platts rack. */
 export function rackPricePerBbl(gradeId: GradeId, slateId: SlateId): number {
   const grade = GRADE_OPTIONS.find((item) => item.id === gradeId) ?? GRADE_OPTIONS[0];
   let perGal = grade.rackPerGal;

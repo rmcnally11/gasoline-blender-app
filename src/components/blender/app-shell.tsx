@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AssayDialog } from "./assay-dialog";
 import { ActionButton } from "./action-button";
 import { EconomicsStrip } from "./economics-strip";
+import { MarksHeader } from "./marks-header";
 import { usePlant } from "./plant-context";
 import { AlertTriangle } from "lucide-react";
 
@@ -88,6 +89,7 @@ export function AppShell({
               </div>
             )}
           </div>
+          {onManual ? null : <MarksHeader />}
           {onManual ? null : lastAction || dirty ? (
             <p className="text-xs text-muted-foreground">
               {dirty

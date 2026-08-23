@@ -6,7 +6,6 @@ import {
   defaultEthanolMode,
   freightPerGalFor,
   optimizePlant,
-  rackPricePerBbl,
   perGalFromBbl,
   refreshTankSpecs,
   regionForSlate,
@@ -22,10 +21,15 @@ import {
   type SolverStatus,
   type TankId,
 } from "@/lib/blend";
+import { applyMarksAndBook, clearTypedForStream, defaultRackProduct, withTypedPrice } from "@/lib/marks/apply";
+import { emptyDailyMarks } from "@/lib/marks/convert";
+import { impliedValuesForUsed } from "@/lib/marks/implied";
+import { persistBook, loadStoredBook } from "@/lib/marks/storage";
+import type { ComponentBookRow, MarksFetchResult } from "@/lib/marks/types";
 
 type SeekBook = Record<string, ComponentSeekResult>;
 
-type BusyKind = "solve" | "seek" | null;
+type BusyKind = "solve" | "seek" | "marks" | null;
 
 type PlantContextValue = {
   plant: Plant;
@@ -46,6 +50,9 @@ type PlantContextValue = {
   updateTankSpecs: (id: TankId, patch: Partial<ProductSpecs>) => void;
   updateComponent: (id: string, patch: Partial<Blendstock>) => void;
   updateRvo: <K extends keyof Plant["rvo"]>(key: K, value: Plant["rvo"][K]) => void;
+  updateComponentBook: (streamKey: ComponentBookRow["streamKey"], patch: Partial<ComponentBookRow>) => void;
+  updateLiftEpsilon: (value: number) => void;
+  refreshMarks: () => void;
   setOverlay: (enabled: boolean) => void;
   tankById: (id: TankId) => ProductTank | undefined;
   finishedBbl: number;
@@ -89,6 +96,12 @@ function emptySolve(): PlantSolve {
   };
 }
 
+function marksLabel(result: MarksFetchResult): string {
+  if (result.ok && result.marks.date) return `Marks as of ${result.marks.date} applied.`;
+  if (result.ok) return "Platts Daily row applied. Some fields are stale / missing.";
+  return result.message;
+}
+
 export function PlantProvider({ children }: { children: React.ReactNode }) {
   const [plant, setPlant] = useState<Plant>(() => createDefaultPlant());
   const [solve, setSolve] = useState<PlantSolve>(emptySolve);
@@ -102,6 +115,7 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
 
   const plantRef = useRef(plant);
   const regionRef = useRef(activeRegion);
+  const solveGen = useRef(0);
   plantRef.current = plant;
   regionRef.current = activeRegion;
 
@@ -109,12 +123,21 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
 
   const applySolve = useCallback((next: Plant, label: string) => {
     const result = optimizePlant(next);
+    const gen = ++solveGen.current;
     setPlant(next);
     plantRef.current = next;
     setSolve(result);
     setSolverStatus(result.status);
     setDirty(false);
     setLastAction(label);
+    if (result.status === "optimal") {
+      window.setTimeout(() => {
+        if (gen !== solveGen.current) return;
+        const implied = impliedValuesForUsed(next, result.componentUsedBbl);
+        if (gen !== solveGen.current) return;
+        setSolve((prev) => ({ ...prev, impliedValues: implied }));
+      }, 0);
+    }
     return result;
   }, []);
 
@@ -122,7 +145,7 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
     setBusy("solve");
     window.setTimeout(() => {
       try {
-        applySolve(plantRef.current, "Plant solved.");
+        applySolve(applyMarksAndBook(plantRef.current), "Plant solved.");
       } finally {
         setBusy(null);
       }
@@ -146,29 +169,83 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
     }, 20);
   }, []);
 
+  const applyFetchedMarks = useCallback(
+    (current: Plant, result: MarksFetchResult): Plant => {
+      if (result.ok) {
+        return applyMarksAndBook({
+          ...current,
+          marks: result.marks,
+          marksLoadState: "ok",
+          marksLoadError: null,
+        });
+      }
+      return applyMarksAndBook({
+        ...current,
+        marks: emptyDailyMarks(),
+        marksLoadState: result.reason === "missing_token" ? "missing_token" : "error",
+        marksLoadError: result.message,
+      });
+    },
+    [],
+  );
+
+  const refreshMarks = useCallback(() => {
+    setBusy("marks");
+    setPlant((current) => {
+      const next = { ...current, marksLoadState: "loading" as const };
+      plantRef.current = next;
+      return next;
+    });
+    void fetch("/api/marks")
+      .then(async (response) => (await response.json()) as MarksFetchResult)
+      .then((result) => {
+        const next = applyFetchedMarks(plantRef.current, result);
+        applySolve(next, marksLabel(result));
+      })
+      .catch((error: unknown) => {
+        const next = applyFetchedMarks(plantRef.current, {
+          ok: false,
+          reason: "airtable_error",
+          message: error instanceof Error ? error.message : "Marks fetch failed.",
+        });
+        applySolve(next, next.marksLoadError ?? "Marks missing.");
+      })
+      .finally(() => setBusy(null));
+  }, [applyFetchedMarks, applySolve]);
+
   useEffect(() => {
-    solvePlant();
-    window.setTimeout(() => {
-      const current = plantRef.current;
-      const book = Object.fromEntries(
-        seekRegion(current, "colonial").map((item) => [item.componentId, item]),
-      );
-      setSeekBooks((prev) => ({ ...prev, colonial: book }));
-    }, 40);
-  }, [solvePlant]);
+    const stored = loadStoredBook();
+    if (stored) {
+      const seeded = applyMarksAndBook({
+        ...plantRef.current,
+        componentBook: stored.book,
+        liftEpsilonPerBbl: stored.liftEpsilonPerBbl,
+      });
+      plantRef.current = seeded;
+      setPlant(seeded);
+    }
+    refreshMarks();
+  }, [refreshMarks]);
 
   const resetPlant = useCallback(() => {
-    const next = createDefaultPlant();
-    applySolve(next, "Plant reset to defaults.");
+    const current = plantRef.current;
+    const next = applyMarksAndBook({
+      ...createDefaultPlant(),
+      componentBook: current.componentBook,
+      liftEpsilonPerBbl: current.liftEpsilonPerBbl,
+      marks: current.marks,
+      marksLoadState: current.marksLoadState,
+      marksLoadError: current.marksLoadError,
+    });
+    applySolve(next, "Plant reset. Marks and component book kept.");
     setSeekBooks({});
     setActiveRegion("colonial");
   }, [applySolve]);
 
-  const updateTank = useCallback((id: TankId, patch: Partial<ProductTank>) => {
-    const current = plantRef.current;
-    const next: Plant = {
-      ...current,
-      tanks: current.tanks.map((tank) => {
+  const updateTank = useCallback(
+    (id: TankId, patch: Partial<ProductTank>) => {
+      const current = plantRef.current;
+      const nextTanks = current.tanks.map((tank) => {
         if (tank.id !== id) return tank;
         const nextTank = { ...tank, ...patch };
         if (patch.slateId && patch.ethanolMode === undefined) {
@@ -177,17 +254,23 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
         if (patch.slateId && patch.freightPerGal === undefined) {
           nextTank.freightPerGal = freightPerGalFor(patch.slateId);
         }
-        const resetWaiver = Boolean(patch.slateId || patch.seasonId || patch.ethanolMode);
-        const refreshed = refreshTankSpecs(nextTank, current.complianceOverlay, { resetWaiver });
-        if ((patch.slateId || patch.gradeId) && patch.rackPricePerBbl === undefined) {
-          refreshed.rackPricePerBbl = rackPricePerBbl(refreshed.gradeId, refreshed.slateId);
+        if (patch.rackPricePerBbl !== undefined && patch.rackProduct === undefined) {
+          nextTank.rackProduct = "manual";
+          nextTank.rackStale = false;
+          nextTank.rackMarksLabel = "typed";
         }
-        return refreshed;
-      }),
-    };
-    applySolve(next, `${id} updated and re-solved.`);
-    if (patch.slateId) setActiveRegion(regionForSlate(patch.slateId));
-  }, [applySolve]);
+        if ((patch.slateId || patch.gradeId) && patch.rackProduct === undefined && nextTank.rackProduct !== "manual") {
+          nextTank.rackProduct = defaultRackProduct(nextTank.gradeId, nextTank.slateId);
+        }
+        const resetWaiver = Boolean(patch.slateId || patch.seasonId || patch.ethanolMode);
+        return refreshTankSpecs(nextTank, current.complianceOverlay, { resetWaiver });
+      });
+      const next = applyMarksAndBook({ ...current, tanks: nextTanks });
+      applySolve(next, `${id} updated and re-solved.`);
+      if (patch.slateId) setActiveRegion(regionForSlate(patch.slateId));
+    },
+    [applySolve],
+  );
 
   const updateTankSpecs = useCallback((id: TankId, patch: Partial<ProductSpecs>) => {
     setPlant((current) => ({
@@ -205,45 +288,93 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
     setLastAction("Spec edit waiting for Solve plant.");
   }, []);
 
-  const updateComponent = useCallback((id: string, patch: Partial<Blendstock>) => {
-    const keys = Object.keys(patch);
-    const current = plantRef.current;
-    const next: Plant = {
-      ...current,
-      components: current.components.map((component) =>
-        component.id === id ? { ...component, ...patch } : component,
-      ),
-    };
-    const name = current.components.find((component) => component.id === id)?.name ?? "Stream";
-    if (keys.length === 1 && keys[0] === "costPerBbl" && patch.costPerBbl !== undefined) {
-      applySolve(next, `${name} market set to $${perGalFromBbl(patch.costPerBbl).toFixed(4)}/gal.`);
-      return;
-    }
-    if (keys.length === 1 && keys[0] === "minLiftBbl" && patch.minLiftBbl !== undefined) {
-      applySolve(next, `${name} must-use set to ${patch.minLiftBbl.toFixed(0)} bbl.`);
-      return;
-    }
-    setPlant(next);
-    plantRef.current = next;
-    setSolverStatus("idle");
-    setDirty(true);
-    setLastAction("Pool edit waiting for Solve plant.");
-  }, [applySolve]);
+  const updateComponent = useCallback(
+    (id: string, patch: Partial<Blendstock>) => {
+      const keys = Object.keys(patch);
+      const current = plantRef.current;
+      const next: Plant = {
+        ...current,
+        components: current.components.map((component) => {
+          if (component.id !== id) return component;
+          if (patch.costPerBbl !== undefined && patch.priceOrigin === undefined) {
+            return withTypedPrice({ ...component, ...patch }, patch.costPerBbl);
+          }
+          return { ...component, ...patch };
+        }),
+      };
+      const name = current.components.find((component) => component.id === id)?.name ?? "Stream";
+      if (keys.length === 1 && keys[0] === "costPerBbl" && patch.costPerBbl !== undefined) {
+        applySolve(next, `${name} market set to $${perGalFromBbl(patch.costPerBbl).toFixed(4)}/gal.`);
+        return;
+      }
+      if (keys.length === 1 && keys[0] === "minLiftBbl" && patch.minLiftBbl !== undefined) {
+        applySolve(next, `${name} must-use set to ${patch.minLiftBbl.toFixed(0)} bbl.`);
+        return;
+      }
+      setPlant(next);
+      plantRef.current = next;
+      setSolverStatus("idle");
+      setDirty(true);
+      setLastAction("Pool edit waiting for Solve plant.");
+    },
+    [applySolve],
+  );
 
-  const updateRvo = useCallback(<K extends keyof Plant["rvo"]>(key: K, value: Plant["rvo"][K]) => {
-    const current = plantRef.current;
-    applySolve({ ...current, rvo: { ...current.rvo, [key]: value } }, "RVO updated and re-solved.");
-  }, [applySolve]);
+  const updateRvo = useCallback(
+    <K extends keyof Plant["rvo"]>(key: K, value: Plant["rvo"][K]) => {
+      const current = plantRef.current;
+      const rvo = { ...current.rvo, [key]: value };
+      if (key === "d6RinPrice") {
+        rvo.d6Stale = false;
+      }
+      applySolve({ ...current, rvo }, "RVO updated and re-solved.");
+    },
+    [applySolve],
+  );
 
-  const setOverlay = useCallback((complianceOverlay: boolean) => {
-    const current = plantRef.current;
-    const next: Plant = {
-      ...current,
-      complianceOverlay,
-      tanks: current.tanks.map((tank) => refreshTankSpecs(tank, complianceOverlay)),
-    };
-    applySolve(next, "Overlay updated and re-solved.");
-  }, [applySolve]);
+  const updateComponentBook = useCallback(
+    (streamKey: ComponentBookRow["streamKey"], patch: Partial<ComponentBookRow>) => {
+      const current = plantRef.current;
+      const componentBook = current.componentBook.map((row) =>
+        row.streamKey === streamKey ? { ...row, ...patch } : row,
+      );
+      persistBook(componentBook, current.liftEpsilonPerBbl);
+      const priceTouched = patch.basisCpg !== undefined || patch.overridePerBbl !== undefined;
+      if (!priceTouched) {
+        const next = { ...current, componentBook };
+        plantRef.current = next;
+        setPlant(next);
+        return;
+      }
+      const components = clearTypedForStream(current.components, streamKey);
+      const next = applyMarksAndBook({ ...current, componentBook, components });
+      applySolve(next, `${streamKey} book updated and re-solved.`);
+    },
+    [applySolve],
+  );
+
+  const updateLiftEpsilon = useCallback((value: number) => {
+    setPlant((current) => {
+      const next = { ...current, liftEpsilonPerBbl: value };
+      persistBook(next.componentBook, value);
+      plantRef.current = next;
+      return next;
+    });
+    setLastAction(`Lift epsilon set to $${value.toFixed(2)}/bbl.`);
+  }, []);
+
+  const setOverlay = useCallback(
+    (complianceOverlay: boolean) => {
+      const current = plantRef.current;
+      const next: Plant = {
+        ...current,
+        complianceOverlay,
+        tanks: current.tanks.map((tank) => refreshTankSpecs(tank, complianceOverlay)),
+      };
+      applySolve(next, "Overlay updated and re-solved.");
+    },
+    [applySolve],
+  );
 
   const finishedBbl = useMemo(
     () => plant.tanks.filter((tank) => tank.enabled).reduce((sum, tank) => sum + tank.demandBbl, 0),
@@ -270,6 +401,9 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       updateTankSpecs,
       updateComponent,
       updateRvo,
+      updateComponentBook,
+      updateLiftEpsilon,
+      refreshMarks,
       setOverlay,
       tankById: (id) => plant.tanks.find((tank) => tank.id === id),
       finishedBbl,
@@ -291,6 +425,9 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       updateTankSpecs,
       updateComponent,
       updateRvo,
+      updateComponentBook,
+      updateLiftEpsilon,
+      refreshMarks,
       setOverlay,
       finishedBbl,
     ],

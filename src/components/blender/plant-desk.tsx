@@ -3,7 +3,9 @@
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { componentsForRegion, regionLabel } from "@/lib/blend";
+import { ComponentBookCard } from "./component-book";
 import { MarketValues } from "./market-values";
+import { MoneyScreen } from "./money-screen";
 import { NumberField } from "./number-field";
 import { PoolCard } from "./pool-card";
 import { usePlant } from "./plant-context";
@@ -63,13 +65,23 @@ export function PlantDesk() {
           />
         </label>
         <label className="space-y-1">
-          <Label className="text-xs text-muted-foreground">D6 RIN, $/RIN</Label>
+          <Label className="text-xs text-muted-foreground">
+            D6 RIN, $/RIN
+            {plant.rvo.d6Stale || plant.marks.d6Stale ? (
+              <span className="ml-1 text-amber-800">stale / missing</span>
+            ) : null}
+          </Label>
           <NumberField
             value={plant.rvo.d6RinPrice}
-            digits={2}
+            digits={4}
             step={0.05}
             onChange={(value) => updateRvo("d6RinPrice", value)}
           />
+          <p className="text-[11px] text-muted-foreground">
+            {plant.marks.d6Cts === null
+              ? "Not from Platts Daily. Typing here is last typed, not a dummy $0.85 mark."
+              : `${plant.marks.d6Cts.toFixed(2)} cts/RIN from Platts → $${plant.rvo.d6RinPrice.toFixed(4)}/RIN.`}
+          </p>
         </label>
         <label className="space-y-1">
           <Label className="text-xs text-muted-foreground">Ethanol denaturant, vol%</Label>
@@ -82,6 +94,9 @@ export function PlantDesk() {
           />
         </label>
       </div>
+
+      <MoneyScreen />
+      <ComponentBookCard />
 
       <section className="space-y-3">
         <div className="space-y-1">

@@ -1,3 +1,6 @@
+import { defaultRackProduct } from "../marks/apply";
+import { emptyComponentBook } from "../marks/component-book";
+import { emptyDailyMarks } from "../marks/convert";
 import { defaultBlendingOctane } from "./octane";
 import { regionForSlate } from "./regions";
 import { DEFAULT_RVO } from "./rvo";
@@ -403,6 +406,8 @@ function stampPool(regionId: RegionId, patches: Partial<Record<StreamKey, Partia
       maxLiftBbl: patch.maxLiftBbl ?? inventoryBbl,
       blendingRon: patch.blendingRon ?? stream.blendingRon ?? bon.blendingRon,
       blendingMon: patch.blendingMon ?? stream.blendingMon ?? bon.blendingMon,
+      priceOrigin: patch.priceOrigin ?? stream.priceOrigin ?? "defaults",
+      priceStale: patch.priceStale ?? true,
     };
   });
 }
@@ -556,6 +561,9 @@ function makeTank(
     demandBbl,
     rackPricePerBbl: rackPricePerBbl(gradeId, slateId),
     freightPerGal: freightPerGalFor(slateId),
+    rackProduct: defaultRackProduct(gradeId, slateId),
+    rackStale: true,
+    rackMarksLabel: "last typed — not Platts",
   };
 }
 
@@ -570,6 +578,11 @@ export function createDefaultPlant(): Plant {
       makeTank("P2", "P2", "regular", "explorer-cbob", 1500, 800, complianceOverlay),
       makeTank("P3", "P3", "regular", "cpl-cbob", 2500, 1100, complianceOverlay),
     ],
+    marks: emptyDailyMarks(),
+    marksLoadState: "idle",
+    marksLoadError: null,
+    componentBook: emptyComponentBook(),
+    liftEpsilonPerBbl: 0.25,
   };
 }
 

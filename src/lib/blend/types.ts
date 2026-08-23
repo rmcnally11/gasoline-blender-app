@@ -1,3 +1,5 @@
+import type { ComponentBookRow, DailyMarks } from "../marks/types";
+
 export type BlendstockId = string;
 export type StreamKey =
   | "nbutane"
@@ -20,6 +22,9 @@ export type SlateId = "cpl-cbob" | "explorer-cbob" | "sfpp-carbob" | "mexico-zmv
 export type RegionId = "colonial" | "explorer" | "west-coast" | "mexico";
 export type NaphthaKind = "light" | "heavy" | null;
 export type SpecLayer = "pipe" | "finished";
+export type PriceOrigin = "defaults" | "platts" | "basis" | "override" | "typed";
+export type RackProduct = "cbob" | "unl87" | "cbob93" | "manual";
+export type MarksLoadState = "idle" | "loading" | "ok" | "missing_token" | "error";
 
 export interface Blendstock {
   id: BlendstockId;
@@ -57,6 +62,9 @@ export interface Blendstock {
   maxVolPct: number;
   enabled: boolean;
   naphtha: NaphthaKind;
+  /** How the book price was set. `defaults` is a toy placeholder — not a lift. */
+  priceOrigin?: PriceOrigin;
+  priceStale?: boolean;
 }
 
 export interface ProductSpecs {
@@ -121,6 +129,10 @@ export interface ProductTank {
   rackPricePerBbl: number;
   /** Pipeline tariff or export freight, dollars per finished gallon */
   freightPerGal: number;
+  /** Which Platts GC rack this tank uses. Midgrade / SFPP / Mexico stay manual. */
+  rackProduct?: RackProduct;
+  rackStale?: boolean;
+  rackMarksLabel?: string;
 }
 
 export interface RvoSettings {
@@ -129,6 +141,9 @@ export interface RvoSettings {
   obligationRate: number;
   /** D6 RIN price, $ per RIN */
   d6RinPrice: number;
+  /** Raw D6 from Platts Daily, cents per RIN. */
+  d6Cts?: number | null;
+  d6Stale?: boolean;
   /** RINs generated per neat ethanol gallon */
   ethanolRinsPerGal: number;
   /** Volume fraction of denaturant in denatured ethanol. RINs are credited after this haircut. */
@@ -144,6 +159,12 @@ export interface Plant {
    * Pipe receipt is unchanged. Default off — a Colonial lift uses the pipe tariff.
    */
   complianceOverlay: boolean;
+  marks: DailyMarks;
+  marksLoadState: MarksLoadState;
+  marksLoadError: string | null;
+  componentBook: ComponentBookRow[];
+  /** DON'T LIFT when book − implied exceeds this, $/bbl. */
+  liftEpsilonPerBbl: number;
 }
 
 export interface BlendProperties {

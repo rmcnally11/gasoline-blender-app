@@ -17,6 +17,23 @@ export function UserManual() {
       </section>
 
       <section className="space-y-2">
+        <h2 className="text-lg font-semibold">Daily marks</h2>
+        <p className="text-muted-foreground">
+          Rack, Chicago ethanol, and D6 come from the latest <strong className="text-foreground">Platts Daily</strong> row
+          in your Airtable (base <code>appokfrHKXUhGXjVo</code>, table <code>tbl5y8ORe6aOumuJn</code>). The header
+          shows <strong className="text-foreground">Marks as of YYYY-MM-DD</strong> plus RB, GC CBOB, ethanol, and D6.
+          Cents per gallon convert as cpg × 0.42 = $/bbl. D6 is cents per RIN → $ per RIN for RVO; both the raw
+          cts and the $/bbl used are shown. An empty field leaves the last typed value and flags
+          <strong className="text-foreground"> stale / missing</strong>. Dummy $104.16 rack / $0.85 RIN from
+          defaults are never labeled as Platts.
+        </p>
+        <p className="text-muted-foreground">
+          Alkylate, FCC, reformate, nC4, isomerate, and naphtha are not on Platts Daily. Type a basis vs GC
+          CBOB (cpg) on the component book, or an absolute $/bbl override. Empty basis is not a typical spread.
+        </p>
+      </section>
+
+      <section className="space-y-2">
         <h2 className="text-lg font-semibold">A normal session</h2>
         <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
           <li>Open the tank that is the lift (P1 Colonial, P2 Explorer, or switch the slate to Mexico / SFPP).</li>
@@ -24,7 +41,8 @@ export function UserManual() {
           <li>Set heel barrels and heel quality. The mix is heel + new components. Inventory and capacity bound the lift.</li>
           <li>On the component book, mark naphtha you already own with <strong className="text-foreground">must-use bbl</strong>.</li>
           <li>Type market $/gal. Edit BON on ethanol and FCC if your book is different.</li>
-          <li>Press <strong className="text-foreground">Value versus destination</strong>. Buy = market ≤ LP implied. The debit card is a heuristic, not the bid.</li>
+          <li>Press <strong className="text-foreground">Solve plant</strong>. The money screen shows book vs LP implied and LIFT / DON&apos;T LIFT. The debit card is a heuristic, not the bid.</li>
+          <li>Press <strong className="text-foreground">Value versus destination</strong> for the naphtha seek — same implied as the money screen.</li>
         </ol>
       </section>
 

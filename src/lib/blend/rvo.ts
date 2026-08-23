@@ -70,10 +70,13 @@ export function rvoCostCoeff(
   return rvoObligationPerHydrocarbonBbl(rvo);
 }
 
+/** Last-typed placeholder only. Never label $0.85 as a Platts D6 mark. */
 export const DEFAULT_RVO: RvoSettings = {
   enabled: true,
   obligationRate: 0.15,
   d6RinPrice: 0.85,
+  d6Cts: null,
+  d6Stale: true,
   ethanolRinsPerGal: 1,
   denaturantVolFrac: 0.02,
 };

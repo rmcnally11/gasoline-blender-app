@@ -11,10 +11,13 @@ A **Gulf Coast component book**. Price naphtha and blendstocks in **$/gal** agai
 - **RFS** — obligation on hydrocarbon gallons, RIN credit after denaturant, Mexico off. Three $/bbl numbers: obligation, credit, net.
 - **Octane** — blending octane numbers on ethanol and FCC (plus a simple E10 synergy). The BON used is shown. Alkylate vs FCC flips if BON or price changes.
 - **Infeasible** — binding constraints and the cheapest relax (1 bbl alk, 0.1 AKI, 1 ppm S, 0.01% benzene, 0.1 psi).
-- **Naphtha** — goal-seek uses the same LP implied value as the header. A debit card, if shown, is a heuristic — not the bid.
+- **Naphtha** — goal-seek uses the same LP implied value as the money screen. A debit card, if shown, is a heuristic — not the bid.
 - **Distillation** — D86 T50/T90/DI are volume-linear approximations. SFPP is not called certified CARBOB.
+- **Marks** — latest Platts Daily row (RB, GC CBOB / Unl87 / CBOB93, Chicago ethanol, D6 only). Empty fields stay last typed and show stale / missing. Dummy $104.16 rack / $0.85 RIN are never labeled as Platts.
+- **Component book** — you type basis vs GC CBOB for streams Platts does not publish. No invented Platts codes or typical spreads.
+- **Money screen** — after Solve, book vs LP implied and LIFT / DON'T LIFT.
 
-Defaults in `src/lib/blend/defaults.ts` are editable. They are not a price truth — type your book.
+Defaults in `src/lib/blend/defaults.ts` are editable assays. They are not a price truth — type your book.
 
 ## Run it
 
@@ -25,6 +28,20 @@ npm run dev
 ```
 
 Open [http://127.0.0.1:43180](http://127.0.0.1:43180).
+
+## Platts Daily (Airtable)
+
+Set these in Vercel Project Settings → Environment Variables (and locally in `.env.local`, never commit):
+
+| Name | Required | Default |
+| --- | --- | --- |
+| `AIRTABLE_API_KEY` | yes | — |
+| `AIRTABLE_BASE_ID` | no | `appokfrHKXUhGXjVo` |
+| `AIRTABLE_PLATTS_TABLE_ID` | no | `tbl5y8ORe6aOumuJn` |
+
+`AIRTABLE_TOKEN` is accepted as an alias for the API key. The app reads the latest row by Date and maps only `NYMEX_RB_Implied`, `GC_CBOB_Diff`, `GC_Unl87_Diff`, `GC_CBOB93_Diff`, `Chi_Ethanol_cpg`, and `D6_RIN_cts`. ULSD, jet, CARBOB, NYH, Denver, Tampa, curve, EIA, and HTML report fields are ignored.
+
+Without the key the header says **Marks missing**. Last typed placeholders stay on the page and are flagged stale.
 
 ## Stack
 

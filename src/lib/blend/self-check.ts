@@ -1,3 +1,7 @@
+import { applyMarksAndBook } from "../marks/apply";
+import { emptyComponentBook } from "../marks/component-book";
+import { emptyDailyMarks, marksFromPlattsFields, SAMPLE_PLATTS_FIELDS_21_AUG_2026 } from "../marks/convert";
+import { liftDecision } from "../marks/lift";
 import { createDefaultPlant, defaultHeel, refreshTankSpecs } from "./defaults";
 import { impliedComponentValue, seekNaphtha, seekRegion } from "./goalseek";
 import { optimizeBlendFromPlant, optimizePlant } from "./optimize";
@@ -348,6 +352,79 @@ function checkNaphthaSeek() {
   assert(reformate?.impliedValue !== null, "Colonial reformate should have an implied value");
 }
 
+function checkMarksUnits() {
+  const marks = marksFromPlattsFields(SAMPLE_PLATTS_FIELDS_21_AUG_2026);
+  assert(marks.date === "2026-08-21", `sample date ${marks.date}`);
+  assert(almost(marks.rbPerBbl!, 304.68 * 0.42), `RB $/bbl ${marks.rbPerBbl}`);
+  assert(almost(marks.gcCbobPerBbl!, 305.43 * 0.42), `GC CBOB $/bbl ${marks.gcCbobPerBbl}`);
+  assert(almost(marks.unl87PerBbl!, 327.43 * 0.42), `Unl87 $/bbl ${marks.unl87PerBbl}`);
+  assert(almost(marks.cbob93PerBbl!, 346.43 * 0.42), `CBOB93 $/bbl ${marks.cbob93PerBbl}`);
+  assert(almost(marks.ethanolPerBbl!, 209.83 * 0.42), `ethanol $/bbl ${marks.ethanolPerBbl}`);
+  assert(almost(marks.d6PerRin!, 2.0925), `D6 $/RIN ${marks.d6PerRin}`);
+  assert(Math.abs((marks.d6PerRin ?? 0) - 209.25 * 0.42) > 50, "D6 must not be converted as cpg × 0.42");
+}
+
+function checkMissingFieldLeavesLast() {
+  const plant = createDefaultPlant();
+  const lastRack = plant.tanks[0].rackPricePerBbl;
+  const lastD6 = plant.rvo.d6RinPrice;
+  const lastAlk = plant.components.find((component) => component.id === "colonial-alkylate")!.costPerBbl;
+  const next = applyMarksAndBook({
+    ...plant,
+    marks: emptyDailyMarks(),
+  });
+  assert(next.tanks[0].rackPricePerBbl === lastRack, "empty Platts must leave last typed rack");
+  assert(next.tanks[0].rackStale === true, "empty rack must be stale / missing");
+  assert(next.rvo.d6RinPrice === lastD6, "empty D6 must leave last typed");
+  assert(next.rvo.d6Stale === true, "empty D6 must be stale");
+  assert(next.components.find((component) => component.id === "colonial-alkylate")!.costPerBbl === lastAlk, "empty basis leaves last typed alk");
+  assert(next.marks.source === "none", "no Airtable row is not a Platts source");
+}
+
+function checkSampleMarksApplyToUsCbobOnly() {
+  const marks = marksFromPlattsFields(SAMPLE_PLATTS_FIELDS_21_AUG_2026);
+  const plant = applyMarksAndBook({
+    ...withSlate(createDefaultPlant(), "P3", "sfpp-carbob"),
+    marks,
+  });
+  assert(almost(plant.tanks[0].rackPricePerBbl, 305.43 * 0.42), `P1 rack ${plant.tanks[0].rackPricePerBbl}`);
+  assert(plant.tanks[0].rackStale === false, "P1 GC CBOB should be live");
+  assert(plant.tanks[2].rackStale === true, "SFPP must not take GC CBOB");
+  const ethanol = plant.components.find((component) => component.id === "colonial-ethanol")!;
+  assert(almost(ethanol.costPerBbl, 209.83 * 0.42), `ethanol ${ethanol.costPerBbl}`);
+  assert(ethanol.priceOrigin === "platts", "ethanol origin");
+  assert(almost(plant.rvo.d6RinPrice, 2.0925), `applied D6 ${plant.rvo.d6RinPrice}`);
+  assert(plant.rvo.d6Stale === false, "D6 from the sample row is not stale");
+}
+
+function checkBasisChangesRecipe() {
+  const base = isolateP1(createDefaultPlant());
+  const marks = marksFromPlattsFields(SAMPLE_PLATTS_FIELDS_21_AUG_2026);
+  const cheapBook = emptyComponentBook().map((row) =>
+    row.streamKey === "alkylate" ? { ...row, basisCpg: -80 } : row,
+  );
+  const dearBook = emptyComponentBook().map((row) =>
+    row.streamKey === "alkylate" ? { ...row, basisCpg: 40 } : row,
+  );
+  const cheap = applyMarksAndBook({ ...base, marks, componentBook: cheapBook });
+  const dear = applyMarksAndBook({ ...base, marks, componentBook: dearBook });
+  const cheapAlk = cheap.components.find((component) => component.id === "colonial-alkylate")!.costPerBbl;
+  const dearAlk = dear.components.find((component) => component.id === "colonial-alkylate")!.costPerBbl;
+  assert(cheapAlk < dearAlk - 20, `basis must move alk book ${cheapAlk} vs ${dearAlk}`);
+  const cheapSolve = optimizePlant(cheap, { diagnose: false });
+  const dearSolve = optimizePlant(dear, { diagnose: false });
+  assert(cheapSolve.status === "optimal" && dearSolve.status === "optimal", "basis plants must solve");
+  const alkCheap = cheapSolve.componentUsedBbl["colonial-alkylate"] ?? 0;
+  const alkDear = dearSolve.componentUsedBbl["colonial-alkylate"] ?? 0;
+  assert(alkCheap > alkDear + 10, `changing alk basis must change the recipe (cheap ${alkCheap}, dear ${alkDear})`);
+}
+
+function checkLiftCall() {
+  assert(liftDecision({ bookPerBbl: 100, impliedPerBbl: 99.8, epsilonPerBbl: 0.25, priceOrigin: "basis" }).call === "LIFT", "within epsilon");
+  assert(liftDecision({ bookPerBbl: 100, impliedPerBbl: 99.7, epsilonPerBbl: 0.25, priceOrigin: "basis" }).call === "DON'T LIFT", "outside epsilon");
+  assert(liftDecision({ bookPerBbl: 80, impliedPerBbl: 120, epsilonPerBbl: 0.25, priceOrigin: "defaults" }).call === "DON'T LIFT", "toy default");
+}
+
 checkSimplex();
 checkDefaultPipeSpecs();
 checkRvpWaiverRules();
@@ -360,4 +437,9 @@ checkSingleTankWrapper();
 checkOtherRegionPools();
 checkAlkylateCanEnter();
 checkNaphthaSeek();
+checkMarksUnits();
+checkMissingFieldLeavesLast();
+checkSampleMarksApplyToUsCbobOnly();
+checkBasisChangesRecipe();
+checkLiftCall();
 console.log("blend engine checks passed");

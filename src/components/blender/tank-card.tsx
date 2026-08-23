@@ -106,10 +106,24 @@ export function TankCard({
             onChange={(value) => onChange({ ethanolMode: value as ProductTank["ethanolMode"] })}
             options={ETHANOL_OPTIONS}
           />
+          <FieldSelect
+            label="GC rack product"
+            value={tank.rackProduct ?? "manual"}
+            onChange={(value) => onChange({ rackProduct: value as ProductTank["rackProduct"] })}
+            options={[
+              { id: "cbob", label: "GC CBOB (Regular / P1–P3 default)" },
+              { id: "unl87", label: "GC Unl87" },
+              { id: "cbob93", label: "GC CBOB93 / Premium" },
+              { id: "manual", label: "Manual / last typed" },
+            ]}
+          />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <label className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Destination marker, $/gal</Label>
+            <Label className="text-xs text-muted-foreground">
+              Destination marker, $/gal
+              {tank.rackStale ? <span className="ml-1 text-amber-800">stale / missing</span> : null}
+            </Label>
             <NumberField
               value={tank.rackPricePerBbl / 42}
               digits={4}
@@ -117,6 +131,10 @@ export function TankCard({
               min={0}
               onChange={(value) => onChange({ rackPricePerBbl: value * 42 })}
             />
+            <p className="text-[11px] text-muted-foreground">
+              {tank.rackMarksLabel ?? "last typed"}
+              {tank.rackStale ? " — not Platts" : ""}
+            </p>
           </label>
           <label className="space-y-1">
             <Label className="text-xs text-muted-foreground">Freight / tariff, $/gal</Label>

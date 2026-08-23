@@ -29,10 +29,11 @@ export function Assumptions() {
       <div>
         <h3 className="mb-1 font-medium text-foreground">Naphtha and RFS</h3>
         <p>
-          Goal-seek uses the same plant LP implied value as the header — the indifference
+          Goal-seek uses the same plant LP implied value as the money screen — the indifference
           price, not a debit card. Any quality card is labeled heuristic and is not the bid.
           RFS obligation is on hydrocarbon gallons. Ethanol RINs are credited after denaturant.
-          Mexico / export tanks are not charged.
+          Mexico / export tanks are not charged. D6 comes from Platts Daily when the row has it;
+          a missing field stays last typed and is flagged stale.
         </p>
       </div>
     </div>
