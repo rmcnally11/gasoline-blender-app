@@ -13,6 +13,7 @@ import {
 } from "@/lib/blend";
 import { ActionButton } from "./action-button";
 import { NumberField } from "./number-field";
+import { TermTip } from "./term-tip";
 
 export function MarketValues({
   regionLabel,
@@ -71,10 +72,24 @@ export function MarketValues({
               : "grid-cols-[minmax(0,1.4fr)_5.75rem_5.75rem_4.5rem]"
           }`}
         >
-          <span>Stream</span>
-          {editPrices ? <span className="text-right">Market $/gal</span> : null}
-          <span className="text-right">Implied $/gal</span>
-          {editPrices ? <span className="text-right">Must-use bbl</span> : <span className="text-right">Your $/gal</span>}
+          <span>
+            <TermTip term="stream">Stream</TermTip>
+          </span>
+          {editPrices ? (
+            <span className="text-right">
+              <TermTip term="marketGal">Market $/gal</TermTip>
+            </span>
+          ) : null}
+          <span className="text-right">
+            <TermTip term="implied">Implied $/gal</TermTip>
+          </span>
+          {editPrices ? (
+            <span className="text-right">
+              <TermTip term="mustUse">Must-use bbl</TermTip>
+            </span>
+          ) : (
+            <span className="text-right">Your $/gal</span>
+          )}
           <span className="text-right">Bid</span>
         </div>
         {components.map((component) => {
@@ -123,7 +138,9 @@ export function MarketValues({
               </div>
               {editPrices ? (
                 <label className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground md:sr-only">Must-use bbl</Label>
+                  <Label className="text-[10px] text-muted-foreground md:sr-only">
+                    <TermTip term="mustUse">Must-use bbl</TermTip>
+                  </Label>
                   <NumberField
                     aria-label={`${component.name} must-use barrels`}
                     value={component.minLiftBbl}

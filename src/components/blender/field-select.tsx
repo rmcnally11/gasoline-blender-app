@@ -15,7 +15,7 @@ export function FieldSelect({
   onChange,
   options,
 }: {
-  label: string;
+  label: React.ReactNode;
   value: string;
   onChange: (value: string) => void;
   options: { id: string; label: string }[];

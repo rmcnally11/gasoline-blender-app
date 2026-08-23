@@ -19,6 +19,7 @@ import { bookPricePerBbl } from "@/lib/marks/component-book";
 import { Pencil } from "lucide-react";
 import { NumberField } from "./number-field";
 import { OptionalNumberField } from "./optional-number-field";
+import { TermTip } from "./term-tip";
 import { usePlant } from "./plant-context";
 
 export function ComponentInputs({ regionId }: { regionId?: RegionId }) {
@@ -45,13 +46,27 @@ export function ComponentInputs({ regionId }: { regionId?: RegionId }) {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="hidden grid-cols-[1.4fr_4rem_5.25rem_5.5rem_5.25rem_5.5rem_minmax(0,1fr)_4.5rem] gap-2 px-1 text-[10px] tracking-wide text-muted-foreground uppercase lg:grid">
-                <span>Stream</span>
-                <span>Use</span>
-                <span className="text-right">Inv bbl</span>
-                <span className="text-right">Must-use</span>
-                <span className="text-right">Market $/gal</span>
-                <span className="text-right">Basis cpg</span>
-                <span>Book</span>
+                <span>
+                  <TermTip term="stream">Stream</TermTip>
+                </span>
+                <span>
+                  <TermTip term="use">Use</TermTip>
+                </span>
+                <span className="text-right">
+                  <TermTip term="inventory">Inv bbl</TermTip>
+                </span>
+                <span className="text-right">
+                  <TermTip term="mustUse">Must-use</TermTip>
+                </span>
+                <span className="text-right">
+                  <TermTip term="marketGal">Market $/gal</TermTip>
+                </span>
+                <span className="text-right">
+                  <TermTip term="basisCpg">Basis cpg</TermTip>
+                </span>
+                <span>
+                  <TermTip term="book">Book</TermTip>
+                </span>
                 <span />
               </div>
               {components.map((component) => {
@@ -76,7 +91,9 @@ export function ComponentInputs({ regionId }: { regionId?: RegionId }) {
                       </p>
                     </div>
                     <label className="flex items-center gap-2 lg:justify-center">
-                      <span className="text-[10px] text-muted-foreground uppercase lg:sr-only">Use</span>
+                      <span className="text-[10px] text-muted-foreground uppercase lg:sr-only">
+                        <TermTip term="use">Use</TermTip>
+                      </span>
                       <Switch
                         size="sm"
                         checked={component.enabled}
@@ -85,7 +102,9 @@ export function ComponentInputs({ regionId }: { regionId?: RegionId }) {
                       />
                     </label>
                     <label className="space-y-1">
-                      <Label className="text-[10px] text-muted-foreground lg:sr-only">Inv bbl</Label>
+                      <Label className="text-[10px] text-muted-foreground lg:sr-only">
+                        <TermTip term="inventory">Inv bbl</TermTip>
+                      </Label>
                       <NumberField
                         aria-label={`${component.name} inventory barrels`}
                         value={component.inventoryBbl}
@@ -101,7 +120,9 @@ export function ComponentInputs({ regionId }: { regionId?: RegionId }) {
                       />
                     </label>
                     <label className="space-y-1">
-                      <Label className="text-[10px] text-muted-foreground lg:sr-only">Must-use bbl</Label>
+                      <Label className="text-[10px] text-muted-foreground lg:sr-only">
+                        <TermTip term="mustUse">Must-use bbl</TermTip>
+                      </Label>
                       <NumberField
                         aria-label={`${component.name} must-use barrels`}
                         value={component.minLiftBbl}
@@ -112,7 +133,9 @@ export function ComponentInputs({ regionId }: { regionId?: RegionId }) {
                       />
                     </label>
                     <label className="space-y-1">
-                      <Label className="text-[10px] text-muted-foreground lg:sr-only">Market $/gal</Label>
+                      <Label className="text-[10px] text-muted-foreground lg:sr-only">
+                        <TermTip term="marketGal">Market $/gal</TermTip>
+                      </Label>
                       <NumberField
                         aria-label={`${component.name} market dollars per gallon`}
                         value={perGalFromBbl(component.costPerBbl)}
@@ -123,7 +146,9 @@ export function ComponentInputs({ regionId }: { regionId?: RegionId }) {
                       />
                     </label>
                     <label className="space-y-1">
-                      <Label className="text-[10px] text-muted-foreground lg:sr-only">Basis vs GC CBOB, cpg</Label>
+                      <Label className="text-[10px] text-muted-foreground lg:sr-only">
+                        <TermTip term="basisCpg">Basis vs GC CBOB, cpg</TermTip>
+                      </Label>
                       {bookRow ? (
                         <OptionalNumberField
                           value={bookRow.basisCpg}
@@ -137,7 +162,9 @@ export function ComponentInputs({ regionId }: { regionId?: RegionId }) {
                       )}
                     </label>
                     <div className="col-span-2 text-xs lg:col-span-1">
-                      <p className="mb-1 text-[10px] text-muted-foreground uppercase lg:hidden">Book / used</p>
+                      <p className="mb-1 text-[10px] text-muted-foreground uppercase lg:hidden">
+                        <TermTip term="book">Book</TermTip> / used
+                      </p>
                       {priced ? (
                         priced.price === null ? (
                           <p className="text-rose-700">

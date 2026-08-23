@@ -6,6 +6,7 @@ import { formatMoney, formatNumber, perGalFromBbl } from "@/lib/blend";
 import { bookPricePerBbl } from "@/lib/marks/component-book";
 import { NumberField } from "./number-field";
 import { OptionalNumberField } from "./optional-number-field";
+import { TermTip } from "./term-tip";
 import { usePlant } from "./plant-context";
 
 export function ComponentBookCard() {
@@ -33,7 +34,9 @@ export function ComponentBookCard() {
       </CardHeader>
       <CardContent className="space-y-3">
         <label className="flex max-w-xs flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Lift epsilon, $/bbl</Label>
+          <Label className="text-xs text-muted-foreground">
+            <TermTip term="liftCut">Lift epsilon, $/bbl</TermTip>
+          </Label>
           <NumberField
             value={plant.liftEpsilonPerBbl}
             digits={2}
@@ -57,11 +60,21 @@ export function ComponentBookCard() {
         ) : null}
 
         <div className="hidden grid-cols-[minmax(0,1.1fr)_5.5rem_5.75rem_minmax(0,1fr)_4.25rem_minmax(0,1fr)] gap-2 px-1 text-[10px] tracking-wide text-muted-foreground uppercase md:grid">
-          <span>Stream</span>
-          <span className="text-right">Basis cpg</span>
-          <span className="text-right">Override $/bbl</span>
-          <span>Book $/bbl</span>
-          <span>Source</span>
+          <span>
+            <TermTip term="stream">Stream</TermTip>
+          </span>
+          <span className="text-right">
+            <TermTip term="basisCpg">Basis cpg</TermTip>
+          </span>
+          <span className="text-right">
+            <TermTip term="override">Override $/bbl</TermTip>
+          </span>
+          <span>
+            <TermTip term="book">Book $/bbl</TermTip>
+          </span>
+          <span>
+            <TermTip term="source">Source</TermTip>
+          </span>
           <span>Notes</span>
         </div>
         {plant.componentBook.map((row) => {
@@ -76,7 +89,9 @@ export function ComponentBookCard() {
                 <p className="font-mono text-[11px] text-muted-foreground">{row.streamKey}</p>
               </div>
               <label className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground md:sr-only">Basis cpg</Label>
+                <Label className="text-[10px] text-muted-foreground md:sr-only">
+                  <TermTip term="basisCpg">Basis cpg</TermTip>
+                </Label>
                 <OptionalNumberField
                   value={row.basisCpg}
                   digits={2}
@@ -86,7 +101,9 @@ export function ComponentBookCard() {
                 />
               </label>
               <label className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground md:sr-only">Override $/bbl</Label>
+                <Label className="text-[10px] text-muted-foreground md:sr-only">
+                  <TermTip term="override">Override $/bbl</TermTip>
+                </Label>
                 <OptionalNumberField
                   value={row.overridePerBbl}
                   digits={2}
@@ -96,7 +113,9 @@ export function ComponentBookCard() {
                 />
               </label>
               <div className="text-xs">
-                <p className="mb-1 text-[10px] text-muted-foreground md:hidden">Book $/bbl</p>
+                <p className="mb-1 text-[10px] text-muted-foreground md:hidden">
+                  <TermTip term="book">Book $/bbl</TermTip>
+                </p>
                 {priced.price === null ? (
                   <p className="text-rose-700">
                     stale / missing
@@ -112,7 +131,9 @@ export function ComponentBookCard() {
                 )}
               </div>
               <div className="text-xs">
-                <p className="mb-1 text-[10px] text-muted-foreground md:hidden">Source</p>
+                <p className="mb-1 text-[10px] text-muted-foreground md:hidden">
+                  <TermTip term="source">Source</TermTip>
+                </p>
                 <p className={row.source === "stale" ? "text-rose-700" : "text-muted-foreground"}>
                   {row.source}
                 </p>

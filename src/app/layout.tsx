@@ -43,7 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
-        <TooltipProvider>
+        <TooltipProvider delay={200}>
           <PlantProvider>
             <MobileTabsProvider>{children}</MobileTabsProvider>
           </PlantProvider>

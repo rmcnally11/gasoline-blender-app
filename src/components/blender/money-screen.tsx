@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { formatMoney, formatNumber, formatPerGal, perGalFromBbl } from "@/lib/blend";
 import { rvoDollarsPerBbl } from "@/lib/marks/convert";
 import { plantMoney, type MoneyLine, type TankMoney } from "@/lib/marks/money";
+import { TermTip } from "./term-tip";
 import { usePlant } from "./plant-context";
 
 export function MoneyScreen() {
@@ -290,17 +291,23 @@ function LiftTable({ lines }: { lines: MoneyLine[] }) {
               <dd className="font-mono tabular-nums">{formatNumber(line.barrels, 0)}</dd>
             </div>
             <div className="rounded-lg bg-muted/40 px-2 py-1.5">
-              <dt className="text-[10px] tracking-wide text-muted-foreground uppercase">Book $/bbl</dt>
+              <dt className="text-[10px] tracking-wide text-muted-foreground uppercase">
+                <TermTip term="book">Book $/bbl</TermTip>
+              </dt>
               <dd className="font-mono tabular-nums">{formatMoney(line.bookPerBbl, 3)}</dd>
             </div>
             <div className="rounded-lg bg-muted/40 px-2 py-1.5">
-              <dt className="text-[10px] tracking-wide text-muted-foreground uppercase">Implied $/bbl</dt>
+              <dt className="text-[10px] tracking-wide text-muted-foreground uppercase">
+                <TermTip term="implied">Implied $/bbl</TermTip>
+              </dt>
               <dd className="font-mono tabular-nums">
                 {line.impliedPerBbl === null ? "…" : formatMoney(line.impliedPerBbl, 3)}
               </dd>
             </div>
             <div className="rounded-lg bg-muted/40 px-2 py-1.5">
-              <dt className="text-[10px] tracking-wide text-muted-foreground uppercase">Book − implied</dt>
+              <dt className="text-[10px] tracking-wide text-muted-foreground uppercase">
+                <TermTip term="bookMinusImplied">Book − implied</TermTip>
+              </dt>
               <dd className="font-mono tabular-nums">
                 {line.bookMinusImplied === null ? "—" : formatMoney(line.bookMinusImplied, 3)}
               </dd>
@@ -316,10 +323,18 @@ function LiftTable({ lines }: { lines: MoneyLine[] }) {
           <tr className="text-[10px] tracking-wide text-muted-foreground uppercase">
             <th className="py-1 pr-2 font-medium">Component</th>
             <th className="py-1 pr-2 text-right font-medium">bbl</th>
-            <th className="py-1 pr-2 text-right font-medium">Book $/bbl</th>
-            <th className="py-1 pr-2 text-right font-medium">Implied $/bbl</th>
-            <th className="py-1 pr-2 text-right font-medium">Book − implied</th>
-            <th className="py-1 font-medium">Call</th>
+            <th className="py-1 pr-2 text-right font-medium">
+              <TermTip term="book">Book $/bbl</TermTip>
+            </th>
+            <th className="py-1 pr-2 text-right font-medium">
+              <TermTip term="implied">Implied $/bbl</TermTip>
+            </th>
+            <th className="py-1 pr-2 text-right font-medium">
+              <TermTip term="bookMinusImplied">Book − implied</TermTip>
+            </th>
+            <th className="py-1 font-medium">
+              <TermTip term="lift">Call</TermTip>
+            </th>
           </tr>
         </thead>
         <tbody>

@@ -1,6 +1,7 @@
 "use client";
 
 import { formatMoney, formatNumber, formatPerGal, perGallon } from "@/lib/blend";
+import { TermTip } from "./term-tip";
 import { usePlant } from "./plant-context";
 
 export function EconomicsStrip() {
@@ -24,9 +25,21 @@ export function EconomicsStrip() {
         </div>
       </div>
       <dl className="grid grid-cols-2 gap-2 md:grid-cols-4">
-        <Metric label="Marker" value={formatPerGal(marker)} hint="Fungible / export" />
-        <Metric label="Components" value={formatPerGal(blend)} hint="New barrels into the lift" />
-        <Metric label="Freight" value={formatPerGal(freight)} hint="Pipeline tariff or export" />
+        <Metric
+          label={<TermTip term="destinationMarker">Marker</TermTip>}
+          value={formatPerGal(marker)}
+          hint="Fungible / export"
+        />
+        <Metric
+          label={<TermTip term="book">Components</TermTip>}
+          value={formatPerGal(blend)}
+          hint="New barrels into the lift"
+        />
+        <Metric
+          label={<TermTip term="freight">Freight</TermTip>}
+          value={formatPerGal(freight)}
+          hint="Pipeline tariff or export"
+        />
         <Metric
           label="Net"
           value={formatPerGal(margin)}
@@ -71,7 +84,7 @@ function Metric({
   hint,
   tone = "muted",
 }: {
-  label: string;
+  label: React.ReactNode;
   value: string;
   hint: string;
   tone?: "muted" | "good" | "bad";

@@ -25,6 +25,7 @@ import { FieldSelect } from "./field-select";
 import { NumberField } from "./number-field";
 import { RecipeBar } from "./recipe-bar";
 import { SpecSheet } from "./spec-sheet";
+import { TermTip } from "./term-tip";
 
 export function TankCard({
   tank,
@@ -84,13 +85,13 @@ export function TankCard({
         <>
         <div className="grid gap-3 sm:grid-cols-2">
           <FieldSelect
-            label="Grade"
+            label={<TermTip term="grade">Grade</TermTip>}
             value={tank.gradeId}
             onChange={(value) => onChange({ gradeId: value as ProductTank["gradeId"] })}
             options={GRADE_OPTIONS.map((option) => ({ id: option.id, label: option.label }))}
           />
           <FieldSelect
-            label="Spec slate / region"
+            label={<TermTip term="slate">Spec slate / region</TermTip>}
             value={tank.slateId}
             onChange={(value) => onChange({ slateId: value as ProductTank["slateId"] })}
             options={SLATE_OPTIONS.map((option) => ({
@@ -99,19 +100,19 @@ export function TankCard({
             }))}
           />
           <FieldSelect
-            label="Season / RVP class"
+            label={<TermTip term="rvpClass">Season / RVP class</TermTip>}
             value={tank.seasonId}
             onChange={(value) => onChange({ seasonId: value as ProductTank["seasonId"] })}
             options={SEASON_OPTIONS.map((option) => ({ id: option.id, label: option.label }))}
           />
           <FieldSelect
-            label="Ethanol"
+            label={<TermTip term="ethanolMode">Ethanol</TermTip>}
             value={tank.ethanolMode}
             onChange={(value) => onChange({ ethanolMode: value as ProductTank["ethanolMode"] })}
             options={ETHANOL_OPTIONS}
           />
           <FieldSelect
-            label="GC rack product"
+            label={<TermTip term="rackProduct">GC rack product</TermTip>}
             value={tank.rackProduct ?? "manual"}
             onChange={(value) => onChange({ rackProduct: value as ProductTank["rackProduct"] })}
             options={[
@@ -125,7 +126,7 @@ export function TankCard({
         <div className="grid grid-cols-2 gap-3">
           <label className="space-y-1">
             <Label className="text-xs text-muted-foreground">
-              Destination marker, $/gal
+              <TermTip term="destinationMarker">Destination marker, $/gal</TermTip>
               {tank.rackStale ? <span className="ml-1 text-rose-700">stale / missing</span> : null}
             </Label>
             <NumberField
@@ -141,7 +142,9 @@ export function TankCard({
             </p>
           </label>
           <label className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Freight / tariff, $/gal</Label>
+            <Label className="text-xs text-muted-foreground">
+              <TermTip term="freight">Freight / tariff, $/gal</TermTip>
+            </Label>
             <NumberField
               value={tank.freightPerGal}
               digits={4}
@@ -151,20 +154,28 @@ export function TankCard({
             />
           </label>
           <label className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Ship volume, bbl</Label>
+            <Label className="text-xs text-muted-foreground">
+              <TermTip term="shipVolume">Ship volume, bbl</TermTip>
+            </Label>
             <NumberField value={tank.demandBbl} digits={0} step={50} min={0} onChange={(value) => onChange({ demandBbl: value })} />
           </label>
           <label className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Opening inventory, bbl</Label>
+            <Label className="text-xs text-muted-foreground">
+              <TermTip term="openingInventory">Opening inventory, bbl</TermTip>
+            </Label>
             <NumberField value={tank.inventoryBbl} digits={0} step={50} min={0} onChange={(value) => onChange({ inventoryBbl: value })} />
           </label>
           <label className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Capacity, bbl</Label>
+            <Label className="text-xs text-muted-foreground">
+              <TermTip term="capacity">Capacity, bbl</TermTip>
+            </Label>
             <NumberField value={tank.capacityBbl} digits={0} step={100} min={tank.heelBbl} onChange={(value) => onChange({ capacityBbl: value })} />
           </label>
           <div className="col-span-2 flex flex-col gap-2 rounded-lg border border-border px-3 py-2 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-xs text-muted-foreground">1-psi waiver</p>
+              <p className="text-xs text-muted-foreground">
+                <TermTip term="rvpWaiver">1-psi waiver</TermTip>
+              </p>
               <p className="text-[11px] text-muted-foreground">
                 {eligible
                   ? applied
@@ -191,7 +202,9 @@ export function TankCard({
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <label className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Heel, bbl</Label>
+              <Label className="text-xs text-muted-foreground">
+                <TermTip term="heel">Heel, bbl</TermTip>
+              </Label>
               <NumberField
                 value={tank.heelBbl}
                 digits={0}

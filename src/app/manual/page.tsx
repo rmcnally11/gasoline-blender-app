@@ -7,7 +7,7 @@ export default function ManualPage() {
   return (
     <AppShell
       title="User manual"
-      subtitle="How to run a case, read $/gal, solve the header, and goal-seek naphtha."
+      subtitle="What every field is. Hover a dotted term on this page or on Inputs / Plant / the tanks."
       showEconomics={false}
     >
       <UserManual />

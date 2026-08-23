@@ -9,6 +9,7 @@ import { ComponentInputs } from "./component-inputs";
 import { MarksHeader } from "./marks-header";
 import { MobileWorkspace } from "./mobile-workspace";
 import { NumberField } from "./number-field";
+import { TermTip } from "./term-tip";
 import { usePlant } from "./plant-context";
 
 export function InputsDesk() {
@@ -26,7 +27,9 @@ export function InputsDesk() {
       <CardContent className="grid gap-3 md:grid-cols-2">
         <div className="flex flex-col gap-3 rounded-xl border border-border px-3 py-2 md:flex-row md:items-end md:justify-between">
           <div>
-            <Label className="text-xs text-muted-foreground">Finished overlay (Tier 3 / MSAT2)</Label>
+            <Label className="text-xs text-muted-foreground">
+              <TermTip term="overlay">Finished overlay (Tier 3 / MSAT2)</TermTip>
+            </Label>
             <p className="text-xs text-muted-foreground">
               10 ppm S / 0.62% benzene on the FINISHED row only. Pipe CBOB receipt stays 80 ppm / 3.8%.
             </p>
@@ -39,7 +42,9 @@ export function InputsDesk() {
         </div>
         <div className="flex flex-col gap-3 rounded-xl border border-border px-3 py-2 md:flex-row md:items-end md:justify-between">
           <div>
-            <Label className="text-xs text-muted-foreground">RFS / RVO</Label>
+            <Label className="text-xs text-muted-foreground">
+              <TermTip term="rfs">RFS / RVO</TermTip>
+            </Label>
             <p className="text-xs text-muted-foreground">
               Obligation on hydrocarbon gallons. RINs on neat ethanol after denaturant. Mexico off.
             </p>
@@ -51,7 +56,9 @@ export function InputsDesk() {
           />
         </div>
         <label className="space-y-1">
-          <Label className="text-xs text-muted-foreground">RVO rate, %</Label>
+          <Label className="text-xs text-muted-foreground">
+            <TermTip term="rvoRate">RVO rate, %</TermTip>
+          </Label>
           <NumberField
             value={plant.rvo.obligationRate * 100}
             digits={1}
@@ -61,7 +68,7 @@ export function InputsDesk() {
         </label>
         <label className="space-y-1">
           <Label className="text-xs text-muted-foreground">
-            D6 RIN, $/RIN
+            <TermTip term="d6">D6 RIN, $/RIN</TermTip>
             {plant.rvo.d6Stale || plant.marks.d6Stale ? (
               <span className="ml-1 text-rose-700">stale / missing</span>
             ) : null}
@@ -74,7 +81,9 @@ export function InputsDesk() {
           />
         </label>
         <label className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Ethanol denaturant, vol%</Label>
+          <Label className="text-xs text-muted-foreground">
+            <TermTip term="denaturant">Ethanol denaturant, vol%</TermTip>
+          </Label>
           <NumberField
             value={plant.rvo.denaturantVolFrac * 100}
             digits={1}
@@ -84,7 +93,9 @@ export function InputsDesk() {
           />
         </label>
         <label className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Lift cut, $/bbl</Label>
+          <Label className="text-xs text-muted-foreground">
+            <TermTip term="liftCut">Lift cut, $/bbl</TermTip>
+          </Label>
           <NumberField
             value={plant.liftEpsilonPerBbl}
             digits={2}

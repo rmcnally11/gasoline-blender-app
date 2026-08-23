@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { formatMoney, formatNumber } from "@/lib/blend";
 import { compareSettlementDays } from "@/lib/marks/compare";
 import { useMemo } from "react";
+import { TermTip } from "./term-tip";
 import { usePlant } from "./plant-context";
 
 function moneyOrDash(value: number | null | undefined, digits = 3, suffix = "/bbl"): string {
@@ -35,10 +36,12 @@ export function MarksCompare() {
   return (
     <Card size="sm">
       <CardHeader className="border-b">
-        <CardTitle>Last settlement vs prior</CardTitle>
+        <CardTitle>
+          Last settlement vs <TermTip term="priorSettlement">prior</TermTip>
+        </CardTitle>
         <CardDescription>
-          Same solved barrels into P1 / P2 / P3. Two Platts Daily Date rows — no second plant, no
-          Sunday print if the table has none.
+          <TermTip term="frozenRecipe">Same solved barrels</TermTip> into P1 / P2 / P3. Two Platts
+          Daily Date rows — no second plant, no Sunday print if the table has none.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
