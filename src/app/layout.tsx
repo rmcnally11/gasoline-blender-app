@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { MobileTabsProvider } from "@/components/blender/mobile-workspace";
 import { PlantProvider } from "@/components/blender/plant-context";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
@@ -43,7 +44,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="flex min-h-full flex-col">
         <TooltipProvider>
-          <PlantProvider>{children}</PlantProvider>
+          <PlantProvider>
+            <MobileTabsProvider>{children}</MobileTabsProvider>
+          </PlantProvider>
         </TooltipProvider>
       </body>
     </html>

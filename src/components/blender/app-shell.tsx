@@ -7,6 +7,7 @@ import { AssayDialog } from "./assay-dialog";
 import { ActionButton } from "./action-button";
 import { EconomicsStrip } from "./economics-strip";
 import { MarksHeader } from "./marks-header";
+import { MobileTabsSlot } from "./mobile-workspace";
 import { usePlant } from "./plant-context";
 import { AlertTriangle } from "lucide-react";
 
@@ -73,6 +74,7 @@ export function AppShell({
             })}
           </nav>
         </div>
+        <MobileTabsSlot />
       </div>
 
       <header
