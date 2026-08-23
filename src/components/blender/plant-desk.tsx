@@ -45,8 +45,8 @@ export function PlantDesk() {
   return (
     <MobileWorkspace
       forceTabs
-      storageKey="plant"
-      defaultSection="pnl"
+      storageKey="plant-charts"
+      defaultSection="blends"
       sections={[
         {
           id: "pnl",
@@ -56,6 +56,7 @@ export function PlantDesk() {
               <MarksHeader />
               <MarksCompare />
               <EconomicsStrip />
+              <BlendBoard />
               <MoneyScreen />
             </>
           ),
