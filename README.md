@@ -14,7 +14,7 @@ A **Gulf Coast component book**. Price naphtha and blendstocks in **$/gal** agai
 - **Naphtha** — goal-seek uses the same LP implied value as the money screen. A debit card, if shown, is a heuristic — not the bid.
 - **Distillation** — D86 T50/T90/DI are volume-linear approximations. SFPP is not called certified CARBOB.
 - **Marks** — latest Platts Daily row (RB, GC CBOB / Unl87 / CBOB93, Chicago ethanol, D6 only). Empty fields stay last typed and show stale / missing. Dummy $104.16 rack / $0.85 RIN are never labeled as Platts.
-- **Component book** — you type basis vs GC CBOB for streams Platts does not publish. No invented Platts codes or typical spreads.
+- **Inputs** — master book for every stream: use, inventory, must-use, market $/gal, basis vs GC CBOB, assay. Plant and the tanks read this page.
 - **Money screen** — after Solve, book vs LP implied and LIFT / DON'T LIFT.
 
 Defaults in `src/lib/blend/defaults.ts` are editable assays. They are not a price truth — type your book.
@@ -29,7 +29,7 @@ npm run dev
 
 Open [http://127.0.0.1:43180](http://127.0.0.1:43180).
 
-On a phone the same pages stack into cards. A second tab row jumps to Money / Book / Markets / Pool (or Lift / Specs / Book / Pool on a tank) so you do not scroll the whole desk. Solve stays at the bottom. From 768px up the desk is unchanged.
+Type the component book on **Inputs**. Plant is P&L / bids. P1 / P2 / P3 are the ticket and the spec. On a phone those rooms are tabs; from 768px up the desk is one page.
 
 Production is the existing Vercel project `gasoline_blender_2.0`:
 [https://gasolineblender20-bobby-204e.vercel.app](https://gasolineblender20-bobby-204e.vercel.app).

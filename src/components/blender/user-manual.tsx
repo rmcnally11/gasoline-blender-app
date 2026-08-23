@@ -29,20 +29,19 @@ export function UserManual() {
         </p>
         <p className="text-muted-foreground">
           Alkylate, FCC, reformate, nC4, isomerate, and naphtha are not on Platts Daily. Type a basis vs GC
-          CBOB (cpg) on the component book, or an absolute $/bbl override. Empty basis is not a typical spread.
+          CBOB (cpg) on <strong className="text-foreground">Inputs</strong>, or an absolute $/bbl override. Empty basis is not a typical spread.
         </p>
       </section>
 
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">A normal session</h2>
         <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
+          <li>Open <strong className="text-foreground">Inputs</strong>. That is the master book — use, inventory, must-use, market $/gal, and basis vs GC CBOB. There is not a second book on Plant or the tanks.</li>
           <li>Open the tank that is the lift (P1 Colonial, P2 Explorer, or switch the slate to Mexico / SFPP).</li>
           <li>Type the <strong className="text-foreground">destination marker</strong> and <strong className="text-foreground">freight / tariff</strong> in $/gal.</li>
           <li>Set heel barrels and heel quality. The mix is heel + new components. Inventory and capacity bound the lift.</li>
-          <li>On the component book, mark naphtha you already own with <strong className="text-foreground">must-use bbl</strong>.</li>
-          <li>Type market $/gal. Edit BON on ethanol and FCC if your book is different.</li>
-          <li>Press <strong className="text-foreground">Solve plant</strong>. The money screen shows book vs LP implied and LIFT / DON&apos;T LIFT. The debit card is a heuristic, not the bid.</li>
-          <li>Press <strong className="text-foreground">Value versus destination</strong> for the naphtha seek — same implied as the money screen.</li>
+          <li>Press <strong className="text-foreground">Solve plant</strong>. Plant P&amp;L shows book vs LP implied and LIFT / DON&apos;T LIFT. The debit card is a heuristic, not the bid.</li>
+          <li>On Plant <strong className="text-foreground">Bids</strong>, press <strong className="text-foreground">Value versus destination</strong> — same implied as the P&amp;L.</li>
         </ol>
       </section>
 

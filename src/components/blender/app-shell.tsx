@@ -13,10 +13,11 @@ import { AlertTriangle } from "lucide-react";
 
 const NAV = [
   { href: "/", label: "Plant", short: "Plant" },
+  { href: "/inputs", label: "Inputs", short: "Inputs" },
   { href: "/p1", label: "P1", short: "P1" },
   { href: "/p2", label: "P2", short: "P2" },
   { href: "/p3", label: "P3", short: "P3" },
-  { href: "/manual", label: "User manual", short: "Manual" },
+  { href: "/manual", label: "User manual", short: "Help" },
 ];
 
 export function AppShell({
@@ -46,6 +47,8 @@ export function AppShell({
   } = usePlant();
   const editing = plant.components.find((component) => component.id === editingId) ?? null;
   const onManual = pathname === "/manual";
+  const onInputs = pathname === "/inputs";
+  const hideDesktopMarks = onManual || onInputs;
 
   return (
     <div className="min-h-full bg-[radial-gradient(circle_at_top,_rgba(14,116,180,0.10),_transparent_48%)] pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-0">
@@ -54,7 +57,7 @@ export function AppShell({
           <p className="hidden text-[11px] font-medium tracking-[0.18em] text-sky-800 uppercase md:block">
             Blend header
           </p>
-          <nav className="grid w-full grid-cols-5 gap-1 md:flex md:w-auto md:flex-wrap">
+          <nav className="grid w-full grid-cols-6 gap-1 md:flex md:w-auto md:flex-wrap">
             {NAV.map((item) => {
               const active = pathname === item.href;
               return (
@@ -98,7 +101,7 @@ export function AppShell({
             </div>
           )}
         </div>
-        {onManual ? null : <MarksHeader />}
+        {hideDesktopMarks ? null : <MarksHeader />}
         {onManual ? null : lastAction || dirty ? (
           <p className="text-xs text-muted-foreground">
             {dirty

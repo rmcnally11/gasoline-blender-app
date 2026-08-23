@@ -7,7 +7,7 @@ export default function HomePage() {
   return (
     <AppShell
       title="Plant"
-      subtitle="Buy components and blend heel + new barrels to a published spec. Pipe receipt and finished are separate. Type your book."
+      subtitle="P&L after Solve. Type the component book on Inputs. P1 / P2 / P3 are the tickets."
     >
       <PlantDesk />
     </AppShell>
