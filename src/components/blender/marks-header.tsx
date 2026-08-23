@@ -37,7 +37,13 @@ export function MarksHeader() {
             </p>
           )}
         </div>
-        <ActionButton variant="outline" onClick={refreshMarks} busy={busy === "marks"} disabled={busy !== null}>
+        <ActionButton
+          className="w-full md:w-auto"
+          variant="outline"
+          onClick={refreshMarks}
+          busy={busy === "marks"}
+          disabled={busy !== null}
+        >
           {busy === "marks" ? "Pulling marks…" : "Refresh marks"}
         </ActionButton>
       </div>

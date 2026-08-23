@@ -37,7 +37,7 @@ export function ComponentBookCard() {
           </p>
         </label>
 
-        <div className="hidden grid-cols-[minmax(0,1.1fr)_5.5rem_5.75rem_minmax(0,1fr)_minmax(0,1fr)] gap-2 px-1 text-[10px] tracking-wide text-muted-foreground uppercase sm:grid">
+        <div className="hidden grid-cols-[minmax(0,1.1fr)_5.5rem_5.75rem_minmax(0,1fr)_minmax(0,1fr)] gap-2 px-1 text-[10px] tracking-wide text-muted-foreground uppercase md:grid">
           <span>Stream</span>
           <span className="text-right">Basis cpg</span>
           <span className="text-right">Override $/bbl</span>
@@ -49,14 +49,14 @@ export function ComponentBookCard() {
           return (
             <div
               key={row.streamKey}
-              className="grid grid-cols-2 items-end gap-2 rounded-lg border border-border/80 px-2.5 py-2 sm:grid-cols-[minmax(0,1.1fr)_5.5rem_5.75rem_minmax(0,1fr)_minmax(0,1fr)]"
+              className="grid grid-cols-2 items-end gap-2 rounded-lg border border-border/80 px-2.5 py-2 md:grid-cols-[minmax(0,1.1fr)_5.5rem_5.75rem_minmax(0,1fr)_minmax(0,1fr)]"
             >
-              <div className="col-span-2 min-w-0 sm:col-span-1">
+              <div className="col-span-2 min-w-0 md:col-span-1">
                 <p className="font-medium">{row.name}</p>
                 <p className="font-mono text-[11px] text-muted-foreground">{row.streamKey}</p>
               </div>
               <label className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground sm:sr-only">Basis cpg</Label>
+                <Label className="text-[10px] text-muted-foreground md:sr-only">Basis cpg</Label>
                 <OptionalNumberField
                   value={row.basisCpg}
                   digits={2}
@@ -66,7 +66,7 @@ export function ComponentBookCard() {
                 />
               </label>
               <label className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground sm:sr-only">Override $/bbl</Label>
+                <Label className="text-[10px] text-muted-foreground md:sr-only">Override $/bbl</Label>
                 <OptionalNumberField
                   value={row.overridePerBbl}
                   digits={2}
@@ -76,6 +76,7 @@ export function ComponentBookCard() {
                 />
               </label>
               <div className="text-xs">
+                <p className="mb-1 text-[10px] text-muted-foreground md:hidden">Book</p>
                 {priced.price === null ? (
                   <p className="text-amber-800">
                     stale / missing
@@ -90,10 +91,10 @@ export function ComponentBookCard() {
                   </p>
                 )}
               </div>
-              <label className="col-span-2 sm:col-span-1">
-                <Label className="text-[10px] text-muted-foreground sm:sr-only">Notes</Label>
+              <label className="col-span-2 md:col-span-1">
+                <Label className="text-[10px] text-muted-foreground md:sr-only">Notes</Label>
                 <input
-                  className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm"
+                  className="h-11 w-full rounded-lg border border-input bg-transparent px-2 text-base md:h-8 md:text-sm"
                   value={row.notes}
                   onChange={(event) => updateComponentBook(row.streamKey, { notes: event.target.value })}
                   aria-label={`${row.name} notes`}

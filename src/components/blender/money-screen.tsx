@@ -157,17 +157,36 @@ function MarksUsed({
   obligationRate: number;
 }) {
   return (
-    <p className="text-xs text-muted-foreground">
-      Marks {date ?? "missing"} · {rackLabel}{" "}
-      {rackPerBbl === null ? "—" : formatMoney(rackPerBbl, 3) + "/bbl"}
-      {rackStale ? " (stale / missing)" : ""}
-      {" · "}ethanol {ethanolPerBbl === null ? "—" : formatMoney(ethanolPerBbl, 3) + "/bbl"}
-      {ethanolStale ? " (stale / missing)" : ""}
-      {" · "}D6 {d6Cts === null ? "—" : `${formatNumber(d6Cts, 2)} cts/RIN`} → {formatMoney(d6PerRin, 4)}/RIN
-      {" → "}
-      RVO {formatMoney(rvoDollarsPerBbl(d6PerRin, obligationRate), 3)}/bbl
-      {d6Stale ? " (stale / missing)" : ""}
-    </p>
+    <>
+      <ul className="space-y-1 text-xs text-muted-foreground md:hidden">
+        <li>Marks {date ?? "missing"}</li>
+        <li>
+          {rackLabel} {rackPerBbl === null ? "—" : formatMoney(rackPerBbl, 3) + "/bbl"}
+          {rackStale ? " (stale / missing)" : ""}
+        </li>
+        <li>
+          Ethanol {ethanolPerBbl === null ? "—" : formatMoney(ethanolPerBbl, 3) + "/bbl"}
+          {ethanolStale ? " (stale / missing)" : ""}
+        </li>
+        <li>
+          D6 {d6Cts === null ? "—" : `${formatNumber(d6Cts, 2)} cts/RIN`} → {formatMoney(d6PerRin, 4)}/RIN
+          {" → "}
+          RVO {formatMoney(rvoDollarsPerBbl(d6PerRin, obligationRate), 3)}/bbl
+          {d6Stale ? " (stale / missing)" : ""}
+        </li>
+      </ul>
+      <p className="hidden text-xs text-muted-foreground md:block">
+        Marks {date ?? "missing"} · {rackLabel}{" "}
+        {rackPerBbl === null ? "—" : formatMoney(rackPerBbl, 3) + "/bbl"}
+        {rackStale ? " (stale / missing)" : ""}
+        {" · "}ethanol {ethanolPerBbl === null ? "—" : formatMoney(ethanolPerBbl, 3) + "/bbl"}
+        {ethanolStale ? " (stale / missing)" : ""}
+        {" · "}D6 {d6Cts === null ? "—" : `${formatNumber(d6Cts, 2)} cts/RIN`} → {formatMoney(d6PerRin, 4)}/RIN
+        {" → "}
+        RVO {formatMoney(rvoDollarsPerBbl(d6PerRin, obligationRate), 3)}/bbl
+        {d6Stale ? " (stale / missing)" : ""}
+      </p>
+    </>
   );
 }
 
@@ -246,7 +265,52 @@ function LiftTable({ lines }: { lines: MoneyLine[] }) {
     return <p className="text-xs text-muted-foreground">No components taken.</p>;
   }
   return (
-    <div className="overflow-x-auto">
+    <>
+    <div className="space-y-2 md:hidden">
+      {lines.map((line) => (
+        <article key={line.id} className="space-y-2 rounded-xl border border-border/80 p-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="font-medium">{line.name}</p>
+              <p className="text-[11px] text-muted-foreground">
+                {line.streamKey}
+                {line.priceStale ? " · stale / missing" : ""}
+                {line.priceOrigin === "defaults" ? " · toy default" : ""}
+              </p>
+            </div>
+            {line.call === "LIFT" ? (
+              <Badge className="bg-emerald-500/15 text-emerald-800">LIFT</Badge>
+            ) : (
+              <Badge variant="destructive">DON&apos;T LIFT</Badge>
+            )}
+          </div>
+          <dl className="grid grid-cols-2 gap-2 text-xs">
+            <div className="rounded-lg bg-muted/40 px-2 py-1.5">
+              <dt className="text-[10px] tracking-wide text-muted-foreground uppercase">bbl</dt>
+              <dd className="font-mono tabular-nums">{formatNumber(line.barrels, 0)}</dd>
+            </div>
+            <div className="rounded-lg bg-muted/40 px-2 py-1.5">
+              <dt className="text-[10px] tracking-wide text-muted-foreground uppercase">Book $/bbl</dt>
+              <dd className="font-mono tabular-nums">{formatMoney(line.bookPerBbl, 3)}</dd>
+            </div>
+            <div className="rounded-lg bg-muted/40 px-2 py-1.5">
+              <dt className="text-[10px] tracking-wide text-muted-foreground uppercase">Implied $/bbl</dt>
+              <dd className="font-mono tabular-nums">
+                {line.impliedPerBbl === null ? "…" : formatMoney(line.impliedPerBbl, 3)}
+              </dd>
+            </div>
+            <div className="rounded-lg bg-muted/40 px-2 py-1.5">
+              <dt className="text-[10px] tracking-wide text-muted-foreground uppercase">Book − implied</dt>
+              <dd className="font-mono tabular-nums">
+                {line.bookMinusImplied === null ? "—" : formatMoney(line.bookMinusImplied, 3)}
+              </dd>
+            </div>
+          </dl>
+          <p className="text-[11px] text-muted-foreground">{line.reason}</p>
+        </article>
+      ))}
+    </div>
+    <div className="hidden overflow-x-auto md:block">
       <table className="w-full min-w-[36rem] text-left text-xs">
         <thead>
           <tr className="text-[10px] tracking-wide text-muted-foreground uppercase">
@@ -290,5 +354,6 @@ function LiftTable({ lines }: { lines: MoneyLine[] }) {
         </tbody>
       </table>
     </div>
+    </>
   );
 }

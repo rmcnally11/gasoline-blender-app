@@ -49,7 +49,78 @@ export function SpecSheet({
     : checks;
 
   return (
-    <div className="overflow-x-auto">
+    <div>
+    <div className="space-y-2 md:hidden">
+      {shown.map((check) => {
+        const editable = EDITABLE[check.id];
+        const limitValue = editable ? specs[editable.key] : check.limit;
+        const digits = editable?.digits ?? 2;
+        return (
+          <article key={check.id} className="space-y-2 rounded-xl border border-border/80 p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-medium">{check.label}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {check.id === "rvp" ? rvpNote : check.blendRule}
+                </p>
+              </div>
+              <SpecBadge check={check} />
+            </div>
+            <dl className="grid grid-cols-2 gap-2 text-xs">
+              <div className="rounded-lg bg-muted/40 px-2 py-1.5">
+                <dt className="text-[10px] tracking-wide text-muted-foreground uppercase">Blend</dt>
+                <dd className="font-mono tabular-nums">
+                  {check.status === "idle"
+                    ? "—"
+                    : formatNumber(check.value, check.unit === "°F" || check.unit === "DI" ? 0 : 2)}
+                  <span className="ml-1 text-muted-foreground">{check.unit}</span>
+                </dd>
+              </div>
+              <div className="rounded-lg bg-muted/40 px-2 py-1.5">
+                <dt className="text-[10px] tracking-wide text-muted-foreground uppercase">Slack</dt>
+                <dd className="font-mono tabular-nums">{formatSigned(check.slack, 2)}</dd>
+              </div>
+              <div className="rounded-lg bg-muted/40 px-2 py-1.5">
+                <dt className="text-[10px] tracking-wide text-muted-foreground uppercase">Pipe receipt</dt>
+                <dd className="font-mono tabular-nums">{limitText(check.pipeLimit, digits)}</dd>
+              </div>
+              <div className="rounded-lg bg-muted/40 px-2 py-1.5">
+                <dt className="text-[10px] tracking-wide text-muted-foreground uppercase">Finished</dt>
+                <dd
+                  className={`font-mono tabular-nums ${
+                    overlayOn && (check.id === "sulfur" || check.id === "benzene") ? "text-amber-800" : ""
+                  }`}
+                >
+                  {limitText(check.finishedLimit, digits)}
+                </dd>
+              </div>
+            </dl>
+            {editable && limitValue !== null ? (
+              <label className="block space-y-1">
+                <span className="text-[10px] tracking-wide text-muted-foreground uppercase">LP limit</span>
+                <NumberField
+                  aria-label={`${check.label} LP limit`}
+                  value={Number(limitValue)}
+                  digits={editable.digits}
+                  step={editable.step}
+                  onChange={(value) => onSpecChange({ [editable.key]: value })}
+                />
+              </label>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                LP {check.limit === null ? "off" : formatNumber(check.limit, 2)}
+              </p>
+            )}
+          </article>
+        );
+      })}
+      <p className="pt-1 text-[11px] text-muted-foreground">
+        Pipe receipt is the Colonial / Explorer / SFPP / Mexico tariff. Finished is the rack.
+        Overlay 10 ppm S / 0.62% benzene writes the finished column only. LP is the number the
+        solver is using.
+      </p>
+    </div>
+    <div className="hidden overflow-x-auto md:block">
       <table className="w-full min-w-[36rem] border-separate border-spacing-0 text-sm">
         <thead>
           <tr className="text-left text-xs text-muted-foreground">
@@ -117,6 +188,7 @@ export function SpecSheet({
         Overlay 10 ppm S / 0.62% benzene writes the finished column only. LP is the number the
         solver is using.
       </p>
+    </div>
     </div>
   );
 }

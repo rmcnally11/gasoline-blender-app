@@ -51,7 +51,7 @@ export function AssayDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="max-h-[92dvh] overflow-y-auto max-md:top-auto max-md:bottom-3 max-md:max-w-[calc(100%-0.75rem)] max-md:translate-y-0 sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{component?.name ?? "Blendstock"}</DialogTitle>
           <DialogDescription>
@@ -61,7 +61,7 @@ export function AssayDialog({
           </DialogDescription>
         </DialogHeader>
         {component ? (
-          <div className="grid max-h-[28rem] grid-cols-2 gap-3 overflow-y-auto pr-1">
+          <div className="grid max-h-[min(28rem,60dvh)] grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2">
             {FIELDS.map((field) => (
               <label key={field.key} className="space-y-1">
                 <Label className="text-xs text-muted-foreground">{field.label}</Label>

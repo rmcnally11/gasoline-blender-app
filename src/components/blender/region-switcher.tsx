@@ -23,7 +23,7 @@ export function RegionSwitcher({
             key={region.id}
             type="button"
             onClick={() => onChange(region.id)}
-            className={`rounded-lg px-2.5 py-1.5 text-sm ${
+            className={`rounded-lg px-2.5 py-1.5 text-sm max-md:min-h-11 ${
               active
                 ? "bg-primary text-primary-foreground"
                 : "border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"

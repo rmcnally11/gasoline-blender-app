@@ -41,13 +41,13 @@ export function MarketValues({
               the header uses. If a quality debit card is shown, it is a heuristic, not the bid.
             </CardDescription>
           </div>
-          <ActionButton onClick={onSeek} busy={busy}>
+          <ActionButton className="w-full md:w-auto" onClick={onSeek} busy={busy}>
             {busy ? "Seeking…" : "Value versus destination"}
           </ActionButton>
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
-        <div className="hidden grid-cols-[minmax(0,1.4fr)_5.75rem_5.75rem_5.75rem_4.5rem] gap-2 px-2.5 text-[10px] tracking-wide text-muted-foreground uppercase sm:grid">
+        <div className="hidden grid-cols-[minmax(0,1.4fr)_5.75rem_5.75rem_5.75rem_4.5rem] gap-2 px-2.5 text-[10px] tracking-wide text-muted-foreground uppercase md:grid">
           <span>Stream</span>
           <span className="text-right">Market $/gal</span>
           <span className="text-right">Implied $/gal</span>
@@ -63,9 +63,9 @@ export function MarketValues({
           return (
             <div
               key={component.id}
-              className="grid grid-cols-2 items-end gap-2 rounded-lg border border-border/80 px-2.5 py-2 sm:grid-cols-[minmax(0,1.4fr)_5.75rem_5.75rem_5.75rem_4.5rem]"
+              className="grid grid-cols-2 items-end gap-2 rounded-lg border border-border/80 px-2.5 py-2 md:grid-cols-[minmax(0,1.4fr)_5.75rem_5.75rem_5.75rem_4.5rem]"
             >
-              <div className="col-span-2 min-w-0 sm:col-span-1">
+              <div className="col-span-2 min-w-0 md:col-span-1">
                 <div className="flex items-center gap-2">
                   <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: component.color }} />
                   <p className="truncate font-medium">{component.name}</p>
@@ -76,7 +76,7 @@ export function MarketValues({
                 </p>
               </div>
               <label className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground sm:sr-only">Market $/gal</Label>
+                <Label className="text-[10px] text-muted-foreground md:sr-only">Market $/gal</Label>
                 <NumberField
                   aria-label={`${component.name} market dollars per gallon`}
                   value={marketGal}
@@ -87,13 +87,13 @@ export function MarketValues({
                 />
               </label>
               <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground sm:sr-only">Implied $/gal</Label>
-                <p className="flex h-8 items-center justify-end font-mono text-sm tabular-nums">
+                <Label className="text-[10px] text-muted-foreground md:sr-only">Implied $/gal</Label>
+                <p className="flex min-h-11 items-center justify-end font-mono text-sm tabular-nums md:h-8 md:min-h-0">
                   {locked ? "E10 lock" : formatPerGal(impliedGal)}
                 </p>
               </div>
               <label className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground sm:sr-only">Must-use bbl</Label>
+                <Label className="text-[10px] text-muted-foreground md:sr-only">Must-use bbl</Label>
                 <NumberField
                   aria-label={`${component.name} must-use barrels`}
                   value={component.minLiftBbl}
@@ -103,16 +103,19 @@ export function MarketValues({
                   onChange={(value) => onMustUseChange(component.id, value)}
                 />
               </label>
-              <div className="flex h-8 items-center justify-end">
-                {locked ? (
-                  <Badge variant="outline">Splash</Badge>
-                ) : seek == null ? (
-                  <Badge variant="outline">Seek</Badge>
-                ) : clears ? (
-                  <Badge className="bg-emerald-500/15 text-emerald-800">Buy</Badge>
-                ) : (
-                  <Badge variant="destructive">Pass</Badge>
-                )}
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground md:sr-only">Bid</Label>
+                <div className="flex min-h-11 items-center justify-end md:h-8 md:min-h-0">
+                  {locked ? (
+                    <Badge variant="outline">Splash</Badge>
+                  ) : seek == null ? (
+                    <Badge variant="outline">Seek</Badge>
+                  ) : clears ? (
+                    <Badge className="bg-emerald-500/15 text-emerald-800">Buy</Badge>
+                  ) : (
+                    <Badge variant="destructive">Pass</Badge>
+                  )}
+                </div>
               </div>
             </div>
           );

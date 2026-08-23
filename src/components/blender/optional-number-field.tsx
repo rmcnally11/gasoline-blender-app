@@ -32,7 +32,10 @@ export function OptionalNumberField({
       inputMode="decimal"
       aria-label={ariaLabel}
       placeholder="—"
-      className={cn("h-8 px-2 text-right font-mono text-sm tabular-nums md:text-sm", className)}
+      className={cn(
+        "h-11 px-2 text-right font-mono text-base tabular-nums md:h-8 md:text-sm",
+        className,
+      )}
       value={draft}
       onFocus={() => {
         setFocused(true);

@@ -1,6 +1,6 @@
 export function UserManual() {
   return (
-    <article className="space-y-8 text-sm leading-6 text-foreground">
+    <article className="space-y-8 overflow-x-clip text-sm leading-6 break-words text-foreground">
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">What this tool is for</h2>
         <p className="text-muted-foreground">

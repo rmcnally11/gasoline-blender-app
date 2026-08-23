@@ -29,7 +29,7 @@ export function PlantDesk() {
   return (
     <>
       <div className="grid gap-3 md:grid-cols-2">
-        <div className="flex items-end justify-between rounded-xl border border-border bg-card/80 px-3 py-2">
+        <div className="flex flex-col gap-3 rounded-xl border border-border bg-card/80 px-3 py-2 md:flex-row md:items-end md:justify-between">
           <div>
             <Label className="text-xs text-muted-foreground">Finished overlay (Tier 3 / MSAT2)</Label>
             <p className="text-xs text-muted-foreground">
@@ -42,7 +42,7 @@ export function PlantDesk() {
             aria-label="Tier 3 and MSAT2 overlay"
           />
         </div>
-        <div className="flex items-end justify-between rounded-xl border border-border bg-card/80 px-3 py-2">
+        <div className="flex flex-col gap-3 rounded-xl border border-border bg-card/80 px-3 py-2 md:flex-row md:items-end md:justify-between">
           <div>
             <Label className="text-xs text-muted-foreground">RFS / RVO</Label>
             <p className="text-xs text-muted-foreground">

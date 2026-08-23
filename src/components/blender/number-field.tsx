@@ -41,7 +41,7 @@ export function NumberField({
       aria-label={ariaLabel}
       disabled={disabled}
       className={cn(
-        "h-8 px-2 text-right font-mono text-sm tabular-nums md:text-sm",
+        "h-11 px-2 text-right font-mono text-base tabular-nums md:h-8 md:text-sm",
         className,
       )}
       value={draft}

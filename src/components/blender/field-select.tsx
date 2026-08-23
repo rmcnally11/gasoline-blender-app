@@ -24,7 +24,7 @@ export function FieldSelect({
     <div className="space-y-1.5">
       <Label className="text-xs text-muted-foreground">{label}</Label>
       <Select value={value} onValueChange={(next) => next && onChange(String(next))}>
-        <SelectTrigger className="w-full">
+        <SelectTrigger className="h-11 w-full text-base data-[size=default]:h-11 md:h-8 md:text-sm md:data-[size=default]:h-8">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

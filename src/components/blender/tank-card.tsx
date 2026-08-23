@@ -57,12 +57,12 @@ export function TankCard({
   return (
     <Card size="sm">
       <CardHeader className="border-b">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
             <CardTitle>{tank.name}</CardTitle>
             <CardDescription>{slateNote(tank.slateId, complianceOverlay)}</CardDescription>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {failed.length > 0 ? <Badge variant="destructive">Mixed tank fails</Badge> : null}
             {failed.length === 0 && cleanBatch && tankSolve?.properties ? (
               <Badge variant="outline">Clean batch</Badge>
@@ -158,7 +158,7 @@ export function TankCard({
             <Label className="text-xs text-muted-foreground">Capacity, bbl</Label>
             <NumberField value={tank.capacityBbl} digits={0} step={100} min={tank.heelBbl} onChange={(value) => onChange({ capacityBbl: value })} />
           </label>
-          <div className="flex items-end justify-between rounded-lg border border-border px-3 py-2">
+          <div className="col-span-2 flex flex-col gap-2 rounded-lg border border-border px-3 py-2 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-xs text-muted-foreground">1-psi waiver</p>
               <p className="text-[11px] text-muted-foreground">

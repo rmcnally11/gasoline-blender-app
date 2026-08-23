@@ -128,3 +128,22 @@
     @apply font-sans;
   }
 }
+
+/* Phone layout only. Desktop (768px+) is unchanged. */
+@media (max-width: 767.98px) {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  html,
+  body {
+    overflow-x: clip;
+  }
+
+  button,
+  a,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+}

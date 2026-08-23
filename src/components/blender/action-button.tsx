@@ -26,7 +26,7 @@ export function ActionButton({
       disabled={disabled || busy}
       onClick={onClick}
       className={cn(
-        "inline-flex h-8 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors",
+        "inline-flex h-11 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors md:h-8",
         "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
         "disabled:pointer-events-none disabled:opacity-50",
         variant === "primary" && "bg-primary text-primary-foreground hover:bg-primary/85",
