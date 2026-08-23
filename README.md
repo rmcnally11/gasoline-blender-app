@@ -29,6 +29,10 @@ npm run dev
 
 Open [http://127.0.0.1:43180](http://127.0.0.1:43180).
 
+Production is the existing Vercel project `gasoline_blender_2.0`:
+[https://gasolineblender20-bobby-204e.vercel.app](https://gasolineblender20-bobby-204e.vercel.app).
+Vercel SSO is on, so open it while logged into that team. `https://gasoline-blender-app.vercel.app` is not an alias on this project.
+
 ## Platts Daily (Airtable)
 
 Set these in Vercel Project Settings → Environment Variables (and locally in `.env.local`, never commit):
