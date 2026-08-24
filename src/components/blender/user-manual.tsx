@@ -9,6 +9,7 @@ const TOC = [
   { href: "#pages", label: "Pages" },
   { href: "#units", label: "Units" },
   { href: "#session", label: "A session" },
+  { href: "#cases", label: "Cases" },
   { href: "#fields", label: "Every field" },
   { href: "#marks", label: "Marks" },
   { href: "#book", label: "Component book" },
@@ -131,6 +132,70 @@ export function UserManual() {
             second optimize.
           </li>
         </ol>
+      </section>
+
+      <section id="cases" className="space-y-4 scroll-mt-24">
+        <h2 className="text-lg font-semibold">Cases you actually run</h2>
+        <p className="text-muted-foreground">
+          Each one is one plant, one Solve. Type the book on Inputs. The ticket is on P1 / P2 / P3.
+        </p>
+        <article className="space-y-1">
+          <h3 className="font-medium">1. Morning strip — did the bid move?</h3>
+          <p className="text-muted-foreground">
+            Refresh marks. Solve once. On Plant, read last settlement vs prior on the{" "}
+            <TermTip term="frozenRecipe">frozen recipe</TermTip>. If the Component Book has a live
+            basis, alk/FCC book moves with GC CBOB. If the book is empty, only rack / ethanol / D6
+            move and the line says component book stale. You are not re-optimizing two plants.
+          </p>
+        </article>
+        <article className="space-y-1">
+          <h3 className="font-medium">2. Someone offers alkylate (or FCC)</h3>
+          <p className="text-muted-foreground">
+            On Inputs → Rules, put the offer on alkylate as{" "}
+            <TermTip term="override">override $/bbl</TermTip>, or a{" "}
+            <TermTip term="basisCpg">basis vs GC CBOB</TermTip>. Set Inv to what you can lift. Solve.
+            Plant LIFT / DON&apos;T LIFT is the bid versus{" "}
+            <TermTip term="implied">implied</TermTip>. Blends shows whether those barrels went into
+            P1/P3 (Colonial) or sat as Not used.
+          </p>
+        </article>
+        <article className="space-y-1">
+          <h3 className="font-medium">3. You are long a stream you must place</h3>
+          <p className="text-muted-foreground">
+            Type <TermTip term="mustUse">Must-use</TermTip> on that stream (nC4, LSR, a cargo of
+            reformate). That is a floor, not a wish. Solve. If the plant goes infeasible, the header
+            cannot absorb that must-use into the enabled tanks — cut must-use, raise inventory
+            elsewhere, or relax a spec. If it solves, Blends shows which tank took the distressed
+            barrels and what slack you spent (usually RVP or AKI).
+          </p>
+        </article>
+        <article className="space-y-1">
+          <h3 className="font-medium">4. Dirty heel in P1 — can you blend out?</h3>
+          <p className="text-muted-foreground">
+            On P1 Ticket, type heel barrels and heel quality (high S, high benzene, low octane).
+            Ship volume is the mixed tank. Solve. If the mix fails, that is not an on-spec ticket —
+            even if a zero-heel clean batch would have passed. Overlay off uses pipe CBOB (80 ppm /
+            3.8% bz). Overlay on is finished 10 ppm / 0.62%.
+          </p>
+        </article>
+        <article className="space-y-1">
+          <h3 className="font-medium">5. Regular E10 Colonial vs finished overlay</h3>
+          <p className="text-muted-foreground">
+            Default P1: Regular, CPL CBOB, E10, overlay off. Solve and note margin and the recipe.
+            Turn <TermTip term="overlay">overlay</TermTip> on (Tier 3 / MSAT2 on finished only).
+            Solve again — this is a new plant, not the frozen compare. Alk/FCC/reformate usually
+            rise because sulfur and benzene got tight. Pipe receipt did not change.
+          </p>
+        </article>
+        <article className="space-y-1">
+          <h3 className="font-medium">6. Two destinations, one morning</h3>
+          <p className="text-muted-foreground">
+            P1 Colonial, P2 Explorer — separate books. Set both tickets, one Solve. The LP splits
+            shared decisions only inside each region. Blends stacked bar is the allocation. Switch
+            Plant Bids to Colonial vs Explorer and value versus that destination. Mexico on P3:
+            NOM-016, no RFS, no GC CBOB rack.
+          </p>
+        </article>
       </section>
 
       <section id="fields" className="space-y-3 scroll-mt-24">
