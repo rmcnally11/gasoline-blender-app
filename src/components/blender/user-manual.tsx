@@ -5,6 +5,7 @@ import { GLOSSARY, glossaryList, type GlossaryKey } from "@/lib/glossary";
 import { TermTip } from "./term-tip";
 
 const TOC = [
+  { href: "#day1", label: "Day 1" },
   { href: "#what", label: "What this is" },
   { href: "#pages", label: "Pages" },
   { href: "#units", label: "Units" },
@@ -33,6 +34,52 @@ export function UserManual() {
         </a>
         .
       </p>
+
+      <section id="day1" className="space-y-3 scroll-mt-24 rounded-xl border border-border bg-card px-4 py-3">
+        <h2 className="text-lg font-semibold">Day 1 — square one</h2>
+        <p className="text-muted-foreground">
+          Ignore P2, P3, Mexico, SFPP, overlay, RFS, charts, and the compare. You are checking that
+          one Colonial Regular E10 lift solves. That is the whole day.
+        </p>
+        <ol className="list-decimal space-y-2 pl-5 text-muted-foreground">
+          <li>
+            Open{" "}
+            <Link href="/inputs" className="text-sky-800 underline underline-offset-2">
+              Inputs
+            </Link>{" "}
+            → <strong className="text-foreground">Rules</strong>. Press{" "}
+            <strong className="text-foreground">Refresh</strong>. Wait until the header shows a
+            marks date or an honest error. Do not type alk/FCC yet.
+          </li>
+          <li>
+            Leave P1 alone. Default is Regular, Colonial CBOB, E10. That is the first ticket.
+          </li>
+          <li>
+            Press <strong className="text-foreground">Solve plant</strong> (bottom of the phone,
+            top-right on desktop).
+          </li>
+          <li>
+            Open{" "}
+            <Link href="/" className="text-sky-800 underline underline-offset-2">
+              Plant
+            </Link>{" "}
+            → <strong className="text-foreground">P&amp;L</strong>. Read two things only: plant
+            margin, and which streams say LIFT. Everything else can wait.
+          </li>
+          <li>
+            If Solve is red / infeasible, you did not fail the model — a floor is too tight. Press{" "}
+            <strong className="text-foreground">Reset plant</strong> and Solve again.
+          </li>
+          <li>
+            When that feels boring, type <em>one</em> number: alkylate basis on Inputs → Rules
+            (Component Book), Refresh or type it locally, Solve again. See if alk enters the lift.
+            That is day 2.
+          </li>
+        </ol>
+        <p className="text-xs text-muted-foreground">
+          Hover a dotted word only when you need it. Do not read the glossary first.
+        </p>
+      </section>
 
       <nav className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-sky-800">
         {TOC.map((item) => (

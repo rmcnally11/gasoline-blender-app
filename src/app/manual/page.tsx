@@ -7,7 +7,7 @@ export default function ManualPage() {
   return (
     <AppShell
       title="User manual"
-      subtitle="What every field is. Hover a dotted term on this page or on Inputs / Plant / the tanks."
+      subtitle="Day 1 is six steps. Ignore the rest until those work."
       showEconomics={false}
     >
       <UserManual />
